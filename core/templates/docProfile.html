@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor's Profile</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Optional: Styling for the scrollbar in the working time section */
+    ::-webkit-scrollbar {
+      height: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #29622E;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+    <section>
+        Nav here
+      </section>
+  <section class="p-6">
+    <!-- Header -->
+    <header class="text-2xl text-[#29622E] font-bold text-center mb-8">
+      Doctor's Profile | Dr. Doctor Name
+    </header>
+
+    <!-- Content Section -->
+    <div class="flex flex-wrap lg:flex-nowrap gap-6">
+      <!-- Left Section -->
+      <div class="flex flex-col items-center bg-white shadow-md p-6 rounded-lg w-full lg:w-1/3">
+        <!-- Profile Image -->
+        <div class="w-36 h-36 bg-gray-200 rounded-full mb-4"></div>
+        <p class="text-sm text-[#29622E] mb-4">NMC Registration No: 213</p>
+        <button class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
+          Book an Online Appointment
+        </button>
+      </div>
+
+      <!-- Right Section -->
+      <div class="bg-white shadow-md p-6 rounded-lg w-full lg:w-2/3">
+        <p class="mb-4"><span class="font-bold">Name:</span> Doctor Name</p>
+        <p class="mb-4"><span class="font-bold">Department:</span> Ophthalmology</p>
+        <p class="mb-4"><span class="font-bold">Expertise:</span> Long term worked in the field of ophthalmology and renowned ophthalmologist of the town</p>
+        <p class="mb-4"><span class="font-bold">Education:</span> Completed MBBS and MSc. in 2002</p>
+        <p class="mb-4"><span class="font-bold">Hospitals Worked:</span> Grande, Medicare, Teaching, Tilganga eye centre</p>
+        <p class="mb-4"><span class="font-bold">Achievements:</span> Award of the notable doctor</p>
+        <p class="font-bold mb-2">Working Time:</p>
+
+        <!-- Working Time Table -->
+        <div class="overflow-x-auto">
+          <table class="min-w-full text-sm border border-gray-300">
+            <thead class="bg-gray-100">
+              <tr class="text-[#29622E]">
+                <th class="border px-4 py-2 text-left">Date</th>
+                <th class="border px-4 py-2 text-left">Dr. Available Time</th>
+                <th class="border px-4 py-2 text-left">Available Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="border px-4 py-2">2024/12/22 [208/09/07]</td>
+                <td class="border px-4 py-2">19:00 - 19:48</td>
+                <td class="border px-4 py-2 space-x-2">
+                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:00">19:00</button>
+                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:08">19:08</button>
+                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:16">19:16</button>
+                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:24">19:24</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Appointment Button -->
+        <button id="appointment-btn" class="mt-4 bg-gray-300 text-white px-6 py-2 rounded-lg shadow cursor-not-allowed transition" disabled>
+          Book Appointment on this day
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    Footer here
+  </section>
+
+  <script>
+    // JavaScript to manage button states
+    const timeButtons = document.querySelectorAll(".time-btn");
+    const appointmentButton = document.getElementById("appointment-btn");
+
+    timeButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        // Reset other buttons
+        timeButtons.forEach((btn) => {
+          btn.classList.remove("bg-[#29622E]", "text-white");
+          btn.classList.add("bg-gray-200", "text-gray-700");
+        });
+
+        // Activate the clicked button
+        button.classList.remove("bg-gray-200", "text-gray-700");
+        button.classList.add("bg-[#29622E]", "text-white");
+
+        // Enable the appointment button
+        appointmentButton.disabled = false;
+        appointmentButton.classList.remove("bg-gray-300", "cursor-not-allowed");
+        appointmentButton.classList.add("bg-[#29622E]", "hover:bg-[#35993E]");
+      });
+    });
+  </script>
+</body>
+</html>
