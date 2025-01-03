@@ -21,28 +21,54 @@
 </head>
 <body class="bg-gray-50">
 
-    <section>
-        Nav here
-      </section>
+  <section>
+    Nav here
+  </section>
+
   <section class="p-6">
-    <!-- Header -->
     <header class="text-2xl text-[#29622E] font-bold text-center mb-8">
       Doctor's Profile | Dr. Doctor Name
     </header>
 
-    <!-- Content Section -->
     <div class="flex flex-wrap lg:flex-nowrap gap-6">
-      <!-- Left Section -->
+
       <div class="flex flex-col items-center bg-white shadow-md p-6 rounded-lg w-full lg:w-1/3">
-        <!-- Profile Image -->
+
         <div class="w-36 h-36 bg-gray-200 rounded-full mb-4"></div>
         <p class="text-sm text-[#29622E] mb-4">NMC Registration No: 213</p>
         <button class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
           Book an Online Appointment
         </button>
+
+
+        <div class="mt-6">
+          <p class="text-center mb-4 font-bold text-lg text-gray-700">Give Rating: ⭐ / 10</p>
+          <button id="rate-btn" class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
+            Give Rating
+          </button>
+        </div>
+
+
+        <div id="rating-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div class="bg-white rounded-lg shadow-lg p-6 w-11/12 max-w-md">
+            <h2 class="text-lg font-bold text-[#29622E] mb-4">Rate the Doctor</h2>
+            <div class="flex items-center justify-between">
+              <label for="rating-input" class="mr-4">Enter Rating (0-10):</label>
+              <input id="rating-input" type="number" min="0" max="10" step="1" class="border border-gray-300 rounded-lg px-4 py-2 w-24">
+            </div>
+            <div class="flex justify-end mt-6 space-x-4">
+              <button id="submit-rating" class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
+                Submit
+              </button>
+              <button id="close-modal" class="bg-gray-300 text-gray-700 px-6 py-2 rounded-lg shadow hover:bg-gray-400 transition">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <!-- Right Section -->
+
       <div class="bg-white shadow-md p-6 rounded-lg w-full lg:w-2/3">
         <p class="mb-4"><span class="font-bold">Name:</span> Doctor Name</p>
         <p class="mb-4"><span class="font-bold">Department:</span> Ophthalmology</p>
@@ -52,7 +78,6 @@
         <p class="mb-4"><span class="font-bold">Achievements:</span> Award of the notable doctor</p>
         <p class="font-bold mb-2">Working Time:</p>
 
-        <!-- Working Time Table -->
         <div class="overflow-x-auto">
           <table class="min-w-full text-sm border border-gray-300">
             <thead class="bg-gray-100">
@@ -77,7 +102,7 @@
           </table>
         </div>
 
-        <!-- Appointment Button -->
+    
         <button id="appointment-btn" class="mt-4 bg-gray-300 text-white px-6 py-2 rounded-lg shadow cursor-not-allowed transition" disabled>
           Book Appointment on this day
         </button>
@@ -90,28 +115,58 @@
   </section>
 
   <script>
-    // JavaScript to manage button states
-    const timeButtons = document.querySelectorAll(".time-btn");
-    const appointmentButton = document.getElementById("appointment-btn");
+    const rateBtn = document.getElementById("rate-btn");
+const ratingModal = document.getElementById("rating-modal");
+const closeModal = document.getElementById("close-modal");
+const submitRating = document.getElementById("submit-rating");
+const ratingInput = document.getElementById("rating-input");
 
-    timeButtons.forEach((button) => {
-      button.addEventListener("click", () => {
-        // Reset other buttons
-        timeButtons.forEach((btn) => {
-          btn.classList.remove("bg-[#29622E]", "text-white");
-          btn.classList.add("bg-gray-200", "text-gray-700");
-        });
+rateBtn.addEventListener("click", () => {
+  ratingModal.classList.remove("hidden");
+});
 
-        // Activate the clicked button
-        button.classList.remove("bg-gray-200", "text-gray-700");
-        button.classList.add("bg-[#29622E]", "text-white");
+closeModal.addEventListener("click", () => {
+  ratingModal.classList.add("hidden");
+});
 
-        // Enable the appointment button
-        appointmentButton.disabled = false;
-        appointmentButton.classList.remove("bg-gray-300", "cursor-not-allowed");
-        appointmentButton.classList.add("bg-[#29622E]", "hover:bg-[#35993E]");
-      });
+ratingInput.addEventListener("input", () => {
+  ratingInput.value = ratingInput.value.replace(/[^0-9]/g, "");
+
+  if (ratingInput.value > 10) {
+    ratingInput.value = 10;
+  }
+});
+
+submitRating.addEventListener("click", () => {
+  const rating = parseInt(ratingInput.value, 10);
+
+  if (rating >= 0 && rating <= 10 && !isNaN(rating)) {
+    alert(`Thank you for rating the doctor: ${rating}/10`);
+    ratingModal.classList.add("hidden");
+    ratingInput.value = ""; // Clear the input field
+  } else {
+    alert("Please enter a valid rating between 0 and 10.");
+  }
+});
+
+const timeButtons = document.querySelectorAll(".time-btn");
+const appointmentButton = document.getElementById("appointment-btn");
+
+timeButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    timeButtons.forEach((btn) => {
+      btn.classList.remove("bg-[#29622E]", "text-white");
+      btn.classList.add("bg-gray-200", "text-gray-700");
     });
+
+    button.classList.remove("bg-gray-200", "text-gray-700");
+    button.classList.add("bg-[#29622E]", "text-white");
+
+    appointmentButton.disabled = false;
+    appointmentButton.classList.remove("bg-gray-300", "cursor-not-allowed");
+    appointmentButton.classList.add("bg-[#29622E]", "hover:bg-[#35993E]");
+  });
+});
   </script>
 </body>
 </html>

@@ -9,3 +9,10 @@ def docProfile(request):
 
 def patientProfile(request):
     return render(request,"patientProfile.html")
+
+def adminDB(request):
+    return render(request, "adminDB.html")
+
+def masterAdmin(request):
+    return render(request, "masterAdmin.html")
+
