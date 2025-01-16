@@ -90,15 +90,7 @@
           </tr>
         </thead>
         <tbody id="hospital-records">
-          <tr>
-            <td class="py-2 px-4">General Hospital</td>
-            <td class="py-2 px-4">New York</td>
-            <td class="py-2 px-4">12345</td>
-            <td class="py-2 px-4 space-x-2">
-              <button class="edit-btn bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700" data-id="1">Edit</button>
-              <button class="delete-btn bg-red-600 text-white px-3 py-1 rounded shadow hover:bg-red-700" data-id="1">Delete</button>
-            </td>
-          </tr>
+          <!-- Rows dynamically fetched from the backend -->
         </tbody>
       </table>
 
@@ -110,21 +102,11 @@
             <th class="py-2 px-4 text-left">Admin Name</th>
             <th class="py-2 px-4 text-left">Hospital</th>
             <th class="py-2 px-4 text-left">Email</th>
-            <th class="py-2 px-4 text-left">Password</th>
             <th class="py-2 px-4 text-left">Actions</th>
           </tr>
         </thead>
         <tbody id="admin-records">
-          <tr>
-            <td class="py-2 px-4">John Doe</td>
-            <td class="py-2 px-4">General Hospital</td>
-            <td class="py-2 px-4">johndoe@example.com</td>
-            <td class="py-2 px-4">********</td>
-            <td class="py-2 px-4 space-x-2">
-              <button class="edit-admin-btn bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700" data-id="1">Edit</button>
-              <button class="delete-admin-btn bg-red-600 text-white px-3 py-1 rounded shadow hover:bg-red-700" data-id="1">Delete</button>
-            </td>
-          </tr>
+          <!-- Rows dynamically fetched from the backend -->
         </tbody>
       </table>
     </div>
@@ -154,6 +136,7 @@
       </form>
     </div>
   </div>
+
   <script>
     const modal = document.getElementById("task-modal");
     const formFields = document.getElementById("form-fields");
@@ -162,13 +145,13 @@
     const messageContainer = document.getElementById("message-container");
     const errorMessage = document.getElementById("error-message");
     const successMessage = document.getElementById("success-message");
-  
+
     // Open modal for adding or editing
     function openModal(task, data = null) {
       modal.classList.remove("hidden");
       modal.classList.add("flex");
       modalTitle.innerText = task;
-  
+
       // Populate form fields for hospitals
       if (task === "Add Hospital" || task === "Edit Hospital") {
         formFields.innerHTML = `
@@ -176,50 +159,42 @@
           <input type="text" id="hospital-location" class="w-full p-2 border border-gray-300 rounded" placeholder="Location" value="${data?.location || ""}" required>
           <input type="text" id="hospital-code" class="w-full p-2 border border-gray-300 rounded" placeholder="Hospital Code" value="${data?.code || ""}" required>
         `;
+      } else if (task === "Add Admin" || task === "Edit Admin") {
+        formFields.innerHTML = `
+          <input type="text" id="admin-name" class="w-full p-2 border border-gray-300 rounded" placeholder="Admin Name" value="${data?.name || ""}" required>
+          <input type="email" id="admin-email" class="w-full p-2 border border-gray-300 rounded" placeholder="Email" value="${data?.email || ""}" required>
+          <select id="admin-hospital" class="w-full p-2 border border-gray-300 rounded" required>
+            <option value="" disabled ${!data ? "selected" : ""}>Select Hospital</option>
+            <!-- Options dynamically populated -->
+          </select>
+        `;
       }
     }
-  
+
     // Close modal
     closeModal.addEventListener("click", () => {
       modal.classList.add("hidden");
       modal.classList.remove("flex");
     });
-  
-    // Add event listeners to the hospital action buttons
-    document.addEventListener("click", (event) => {
-      // Handle Edit button
-      if (event.target.classList.contains("edit-btn")) {
-        const id = event.target.dataset.id;
-        // Simulate fetching record details
-        const record = { id, name: "General Hospital", location: "New York", code: "12345" }; // Replace with API call
-        openModal("Edit Hospital", record);
-      }
-  
-      // Handle Delete button
-      if (event.target.classList.contains("delete-btn")) {
-        const id = event.target.dataset.id;
-        const confirmed = confirm("Are you sure you want to delete this hospital?");
-        if (confirmed) {
-          // Simulate deletion
-          alert(`Hospital with ID ${id} deleted successfully!`);
-          // Remove the record from the table
-          event.target.closest("tr").remove();
-        }
-      }
+
+    // Add event listeners to action buttons
+    document.getElementById("add-hospital-btn").addEventListener("click", () => {
+      openModal("Add Hospital");
     });
-  
-    // Handle form submission for add/edit
+
+    document.getElementById("add-admin-btn").addEventListener("click", () => {
+      openModal("Add Admin");
+    });
+
+    // Handle form submission
     document.getElementById("task-form").addEventListener("submit", (event) => {
       event.preventDefault();
-      const isEdit = modalTitle.innerText.includes("Edit");
-      successMessage.innerText = isEdit ? "Hospital record updated successfully!" : "Hospital record added successfully!";
+      successMessage.innerText = "Submitted successfully!";
       messageContainer.classList.remove("hidden");
       modal.classList.add("hidden");
       modal.classList.remove("flex");
     });
   </script>
-  
-
-  
 </body>
 </html>
+
