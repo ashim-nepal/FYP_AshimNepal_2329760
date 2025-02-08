@@ -163,6 +163,7 @@
         formFields.innerHTML = `
           <input type="text" id="admin-name" class="w-full p-2 border border-gray-300 rounded" placeholder="Admin Name" value="${data?.name || ""}" required>
           <input type="email" id="admin-email" class="w-full p-2 border border-gray-300 rounded" placeholder="Email" value="${data?.email || ""}" required>
+          <input type="password" id="admin-password" class="w-full p-2 border border-gray-300 rounded" placeholder="Password" value="${data?.password || ""}" required>
           <select id="admin-hospital" class="w-full p-2 border border-gray-300 rounded" required>
             <option value="" disabled ${!data ? "selected" : ""}>Select Hospital</option>
             <!-- Options dynamically populated -->

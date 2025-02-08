@@ -14,8 +14,8 @@
     <p class="text-gray-600 text-center mb-6">Please Login to Continue</p>
 
     <!-- Login Form -->
-    <form id="login-form" class="space-y-6" method="POST" action="/api/login/">
-      {% csrf_token %%}
+    <form id="login-form" class="space-y-6" method="POST" action="{% url 'loginPage' %}">
+      {% csrf_token %}
       <!-- Email Field -->
       <div>
         <label for="email" class="block text-sm font-medium text-gray-700">Email</label>
@@ -47,6 +47,9 @@
         Log In
       </button>
     </form>
+    {% if error %}
+    <p style="color: red;">{{ error }}</p>
+{% endif %}
 
     <!-- Forgot Password -->
     <div class="text-center mt-6">
@@ -81,9 +84,7 @@
         return null;
       }
       
-      // Add CSRF token to the headers in the fetch request
-      loginForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+      
   
       // Reset error messages
       emailError.classList.add('hidden');
@@ -103,21 +104,25 @@
         isValid = false;
       }
   
-      // If valid, send login request to backend
       if (isValid) {
         try {
-          const csrfToken = getCSRFToken();
-          const response = await fetch('/api/login/', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-CSRFToken': csrfToken, // CSRF token
-            },
-            body: JSON.stringify({
-              email: emailInput.value.trim(),
-              password: passwordInput.value.trim(),
-            }),
-          });
+            const csrfToken = getCSRFToken();
+            console.log("CSRF TOKEN: ", csrfToken);
+            const loginData = {
+                email: emailInput.value.trim(),
+                password: passwordInput.value.trim(),
+            };
+
+            console.log("Sending Login Data:", loginData);
+
+            const response = await fetch('/api/login/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': csrfToken,
+                },
+                body: JSON.stringify(loginData),
+            });
   
           const data = await response.json();
   

@@ -1,6 +1,6 @@
 from django.db import models
 import uuid
-from django.contrib.auth.hashers import make_password
+from django.contrib.auth.hashers import make_password, check_password
 
 class HospitalBranches(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -17,15 +17,26 @@ class Users(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=100, unique=True)
     password = models.CharField(max_length=255)
-    
+
     def save(self, *args, **kwargs):
-        if not self.id or Users.objects.get(id=self.id).password != self.password:
+        # Hash password only if it's not already hashed
+        if not self.pk or not self.password.startswith('pbkdf2_sha256$'):
             self.password = make_password(self.password)
         super().save(*args, **kwargs)
-        
+
     name = models.CharField(max_length=100)
-    role = models.CharField(max_length=20, choices=[('Patient', 'Patient'), ('Doctor', 'Doctor'), ('Admin', 'Admin'), ('Department Admin', 'Department Admin')])
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.SET_NULL, null=True, blank=True)
+    role = models.CharField(
+    max_length=20, 
+    choices=[
+        ('Patient', 'Patient'),
+        ('Doctor', 'Doctor'),
+        ('Admin', 'Admin'),
+        ('MasterAdmin', 'Master Admin'),
+        ('Reception', 'Receptionist'),
+        ('TestCentre', 'Test Centre')
+    ]
+    )
+    branch = models.ForeignKey('HospitalBranches', on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -212,3 +223,4 @@ class WorkflowAnalytics(models.Model):
 
     def __str__(self):
         return f"Analytics - {self.user.name}"
+

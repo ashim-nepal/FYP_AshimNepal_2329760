@@ -6,9 +6,9 @@ from . import views
 
 urlpatterns = [
     path('', home, name='home'),
-    path('login/',views.loginPage, name='loginPage'),
+    path('login/',views.login_view, name='loginPage'),
     path('api/login/', views.login_api, name='login_api'),
-    path('docProfile/', views.docProfile, name="doctorPRofile"),
+    path('docProfile/', views.docProfile, name="doctorProfile"),
     path('patientProfile/', views.patientProfile),
     path('adminDB/', views.adminDB),
     path('masterAdminDB/', views.masterAdmin, name='masterAdminDashboard'),
@@ -16,4 +16,6 @@ urlpatterns = [
     path('masterAdminDB/api/hospitals/<str:pk>/', HospitalBranchView.as_view(), name='hospital-detail-update-delete'),
     path('masterAdminDB/api/admins/', AdminView.as_view(), name='admin-list-create'),
     path('masterAdminDB/api/admins/<str:pk>/', AdminView.as_view(), name='admin-detail-update-delete'),
+    path('receptionDB/', views.receptionDB, name='receptionistDashboard'),
+    # path('create-user/', create_user_view, name='create-user')
 ]

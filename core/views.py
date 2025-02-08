@@ -5,8 +5,9 @@ from rest_framework.response import Response
 from rest_framework import status
 import json
 from .serializers import HospitalBranchSerializer, UserSerializer
-from django.http import JsonResponse
-from django.contrib.auth.hashers import check_password
+from django.http import JsonResponse, HttpResponse
+from django.contrib.auth.hashers import check_password, make_password
+from django.contrib.auth import authenticate, login as auth_login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 
@@ -23,10 +24,16 @@ def patientProfile(request):
 def adminDB(request):
     return render(request, "adminDB.html")
 
-def masterAdmin(request):
-    if request.user.role != "masterAdmin":
+def receptionDB(request):
+    if request.user.role != "Reception":
         return redirect('login')
-    return render(request, "masterAdmin.html")
+    return render(request, "receptionDB.html", {'role': request.user.role})
+
+@login_required
+def masterAdmin(request):
+    if request.user.role != "MasterAdmin":
+        return redirect('login')
+    return render(request, "masterAdmin.html", {'role': request.user.role})
 
 
 def loginPage(request):
@@ -38,51 +45,61 @@ def loginPage(request):
 @csrf_exempt
 def login_api(request):
     if request.method == 'POST':
-        data = json.loads(request.body)
-
-        email = data.get('email')
-        password = data.get('password')
-
-        # Validate inputs
-        if not email or not password:
-            return JsonResponse({'error': 'Email and Password are required'}, status=400)
-
         try:
-            # Fetch user from the database
-            user = Users.objects.get(email=email)
+            # Ensure request body is not empty
+            if not request.body:
+                return JsonResponse({'error': 'Empty request body'}, status=400)
 
-            # Check password
-            if not check_password(password, user.password):
-                return JsonResponse({'error': 'Invalid password'}, status=401)
+            data = json.loads(request.body.decode("utf-8"))
+            print("Received data:", data)
 
-            # Redirect based on role
-            if user.role == 'masterAdmin':
-                return JsonResponse({'success': True, 'redirect_url': '/masterAdminDB/'}, status=200)
+            email = data.get('email')
+            password = data.get('password')
 
-            elif user.role == 'Doctor':
-                return JsonResponse({'success': True, 'redirect_url': ''}, status=200)
+            # Validate inputs
+            if not email or not password:
+                return JsonResponse({'error': 'Email and Password are required'}, status=400)
 
-            elif user.role == 'Admin':
-                return JsonResponse({'success': True, 'redirect_url': '/adminDB/'}, status=200)
+            try:
+                user = Users.objects.get(email=email)
+                print("User  found:", user)
 
-            elif user.role == 'Patient':
-                return JsonResponse({'success': True, 'redirect_url': ''}, status=200)
+                if not check_password(password, user.password):
+                    return JsonResponse({'error': 'Invalid password'}, status=401)
 
-            elif user.role == 'Reception':
-                return JsonResponse({'success': True, 'redirect_url': '/receptionDB/'}, status=200)
+                # Redirect based on user role
+                role_redirects = {
+                    'masterAdmin': '/masterAdminDB/',
+                    'Doctor': '',
+                    'Admin': '/adminDB/',
+                    'Patient': '',
+                    'Reception': '/receptionDB/',
+                    'TestCentre': '/testCentreDB/',
+                }
 
-            elif user.role == 'TestCentre':
-                return JsonResponse({'success': True, 'redirect_url': '/testCentreDB/'}, status=200)
+                return JsonResponse({'success': True, 'redirect_url': role_redirects.get(user.role, '')}, status=200)
 
-            # If role does not match any known role
-            return JsonResponse({'error': 'Unauthorized role'}, status=403)
+            except Users.DoesNotExist:
+                return JsonResponse({'error': 'Invalid email or password'}, status=401)
 
-        except Users.DoesNotExist:
-            return JsonResponse({'error': 'Invalid email or password'}, status=401)
+        except json.JSONDecodeError:
+            return JsonResponse({'error': 'Invalid JSON format'}, status=400)
 
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
+
+def login_view(request):
+    if request.method == 'POST':
+        email = request.POST.get('email')  # Assuming you are using email for login
+        password = request.POST.get('password')
+        user = authenticate(request, username=email, password=password)
+        if user is not None:
+            auth_login(request, user)  # Log the user in
+            return redirect(request.GET.get('next', 'home'))  # Redirect to the next page or home
+        else:
+            return render(request, 'login.html', {'error': 'Invalid credentials'})
+    return render(request, 'login.html')
 
 
 # Hospital CRUD
@@ -153,3 +170,22 @@ class AdminView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Users.DoesNotExist:
             return Response({'error': 'Admin not found'}, status=status.HTTP_404_NOT_FOUND)
+        
+        
+
+# def create_user_view(request):
+#     email = 'masteradmin@sync.com'
+#     password = 'Master@123456'
+#     name = 'System Master Admin'
+#     role = 'masterAdmin'
+#     is_active = True
+
+#     new_user = Users(
+#         email=email,
+#         password=make_password(password),
+#         name=name,
+#         role=role,
+#         is_active=is_active
+#     )
+#     new_user.save()
+#     return HttpResponse('User  created successfully.')
