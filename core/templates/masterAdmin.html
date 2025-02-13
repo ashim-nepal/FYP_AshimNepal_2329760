@@ -16,7 +16,7 @@
         </div>
         <h1 class="text-3xl font-bold text-green-700">Master Administrator</h1>
       </div>
-      <a href="#" class="text-green-700 font-semibold hover:underline">Logout</a>
+      <button onclick="confirmLogout()" class="text-green-700 font-semibold hover:underline">Logout</button>
     </div>
 
     <!-- Stats Section -->
@@ -195,6 +195,14 @@
       modal.classList.add("hidden");
       modal.classList.remove("flex");
     });
+
+    function confirmLogout() {
+      const confirmAction = confirm("Are you sure you want to logout?");
+      if (confirmAction) {
+        window.location.href = "/logout/";  // ✅ Redirect to logout URL
+      }
+    }
+    
   </script>
 </body>
 </html>

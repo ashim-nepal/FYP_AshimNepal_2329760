@@ -67,9 +67,64 @@
   
     // Email Regex
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
   
+      const email = document.getElementById('email').value.trim();
+      const password = document.getElementById('password').value.trim();
+  
+      // Get CSRF Token
+      function getCSRFToken() {
+          const name = 'csrftoken';
+          const cookies = document.cookie.split(';');
+          for (let i = 0; i < cookies.length; i++) {
+              const cookie = cookies[i].trim();
+              if (cookie.startsWith(name + '=')) {
+                  return cookie.substring(name.length + 1);
+              }
+          }
+          return '';
+      }
+  
+      if (!email || !password) {
+          alert("Email and password are required!");
+          return;
+      }
+  
+      try {
+          const csrfToken = getCSRFToken();
+          console.log("CSRF TOKEN: ", csrfToken);
+          
+          const response = await fetch('/api/login/', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'X-CSRFToken': csrfToken,
+              },
+              body: JSON.stringify({ email, password }),
+          });
+  
+          const data = await response.json();
+          console.log("Login Response:", data);
+  
+          if (response.ok && data.success) {
+              // window.location.href = data.redirect_url;  // Redirect to user dashboard
+              window.location.replace(data.redirect_url);
+          } else {
+              alert(data.error || "Invalid login credentials.");
+          }
+      } catch (error) {
+          console.error("Login Error:", error);
+          alert("An error occurred. Please try again.");
+      }
+  });
+
+
+
+
     // Form Submit Event
-    loginForm.addEventListener('submit', async (e) => {
+    {% comment %} loginForm.addEventListener('submit', async (e) => {
       e.preventDefault();
 
       function getCSRFToken() {
@@ -139,7 +194,7 @@
           alert('An unexpected error occurred. Please try again later.');
         }
       }
-    });
+    }); {% endcomment %}
   </script>
 
 </body>

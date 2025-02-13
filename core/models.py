@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 from django.contrib.auth.hashers import make_password, check_password
+from django.utils.timezone import now
 
 class HospitalBranches(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -17,6 +18,7 @@ class Users(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(max_length=100, unique=True)
     password = models.CharField(max_length=255)
+    last_login = models.DateTimeField(default=now)
 
     def save(self, *args, **kwargs):
         # Hash password only if it's not already hashed

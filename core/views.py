@@ -7,9 +7,11 @@ import json
 from .serializers import HospitalBranchSerializer, UserSerializer
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.hashers import check_password, make_password
-from django.contrib.auth import authenticate, login as auth_login
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.sessions.models import Session
+from django.utils.timezone import now
 
 # Create your views here.
 def home(request):
@@ -29,11 +31,22 @@ def receptionDB(request):
         return redirect('login')
     return render(request, "receptionDB.html", {'role': request.user.role})
 
-@login_required
+# @login_required(login_url='/login/')  # ✅ Ensure only logged-in users can access
+# def masterAdmin(request):
+#     # ✅ Check if session exists
+#     if 'user_id' not in request.session:
+#         return redirect('/login/')
+
+#     return render(request, 'masterAdmin.html')
+
 def masterAdmin(request):
-    if request.user.role != "MasterAdmin":
-        return redirect('login')
-    return render(request, "masterAdmin.html", {'role': request.user.role})
+    if not request.session.get('is_authenticated'):
+        return redirect('/login/')
+    
+    if request.session.get('user_role') != 'masteradmin':
+        return redirect('/login/')  # Prevent unauthorized access
+    
+    return render(request, 'masterAdmin.html')
 
 
 def loginPage(request):
@@ -46,41 +59,40 @@ def loginPage(request):
 def login_api(request):
     if request.method == 'POST':
         try:
-            # Ensure request body is not empty
-            if not request.body:
-                return JsonResponse({'error': 'Empty request body'}, status=400)
-
             data = json.loads(request.body.decode("utf-8"))
-            print("Received data:", data)
-
             email = data.get('email')
             password = data.get('password')
 
-            # Validate inputs
             if not email or not password:
                 return JsonResponse({'error': 'Email and Password are required'}, status=400)
 
-            try:
-                user = Users.objects.get(email=email)
-                print("User  found:", user)
+            user = Users.objects.filter(email=email).first()
+            print("User Found: ",user)
+            print("User Role: ",user.role)
 
-                if not check_password(password, user.password):
-                    return JsonResponse({'error': 'Invalid password'}, status=401)
+            if user and check_password(password, user.password):
+                
+                request.session['user_id'] = str(user.id)
+                request.session['user_role'] = user.role.lower()
+                request.session.set_expiry(86400)
+                
+                
+                request.session['is_authenticated'] = True
+                
 
-                # Redirect based on user role
+                # ✅ Redirect user based on role
                 role_redirects = {
-                    'masterAdmin': '/masterAdminDB/',
-                    'Doctor': '',
-                    'Admin': '/adminDB/',
-                    'Patient': '',
-                    'Reception': '/receptionDB/',
-                    'TestCentre': '/testCentreDB/',
+                    'masteradmin': '/masterAdminDB/',
+                    'doctor': '/doctorDB/',
+                    'admin': '/adminDB/',
+                    'patient': '/patientDB/',
+                    'reception': '/receptionDB/',
+                    'testcentre': '/testCentreDB/',
                 }
 
-                return JsonResponse({'success': True, 'redirect_url': role_redirects.get(user.role, '')}, status=200)
+                return JsonResponse({'success': True, 'redirect_url': role_redirects.get(user.role.lower(), '/')}, status=200)
 
-            except Users.DoesNotExist:
-                return JsonResponse({'error': 'Invalid email or password'}, status=401)
+            return JsonResponse({'error': 'Invalid email or password'}, status=401)
 
         except json.JSONDecodeError:
             return JsonResponse({'error': 'Invalid JSON format'}, status=400)
@@ -88,18 +100,38 @@ def login_api(request):
     return JsonResponse({'error': 'Invalid request method'}, status=405)
 
 
-
 def login_view(request):
     if request.method == 'POST':
-        email = request.POST.get('email')  # Assuming you are using email for login
+        email = request.POST.get('email')
         password = request.POST.get('password')
-        user = authenticate(request, username=email, password=password)
-        if user is not None:
-            auth_login(request, user)  # Log the user in
-            return redirect(request.GET.get('next', 'home'))  # Redirect to the next page or home
-        else:
-            return render(request, 'login.html', {'error': 'Invalid credentials'})
+
+        try:
+            user = Users.objects.get(email=email)
+            if check_password(password, user.password):
+                request.session['user_id'] = str(user.id)  # Store user in session
+                request.session['user_role'] = user.role.lower()
+                request.session.set_expiry(86400)
+
+                # Role-based redirect
+                role_redirects = {
+                    'masteradmin': '/masterAdminDB/',
+                    'doctor': '/doctorDB/',
+                    'admin': '/adminDB/',
+                    'patient': '/patientDB/',
+                    'reception': '/receptionDB/',
+                    'testcentre': '/testCentreDB/',
+                }
+                return redirect(role_redirects.get(user.role.lower(), '/'))
+
+        except Users.DoesNotExist:
+            return render(request, 'login.html', {'error': 'Invalid email or password'})
+
     return render(request, 'login.html')
+
+
+def logout_view(request):
+    request.session.flush()
+    return redirect('/login/')
 
 
 # Hospital CRUD
