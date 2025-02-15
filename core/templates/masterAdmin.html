@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Master Admin Dashboard</title>
+  <title>Master Admin Dashboard | syncHealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -66,10 +66,10 @@
     <!-- Tasks Section -->
     <h2 class="text-2xl font-bold text-green-700 mb-6">Tasks</h2>
     <div class="flex space-x-4 mb-6">
-      <button id="add-hospital-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700">
+      <button onclick="openBranchModal('Add Hospital')" id="add-hospital-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700">
         Add Hospital
       </button>
-      <button id="add-admin-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700">
+      <button onclick="openAdminModal('Add Admin')"  id="add-admin-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700">
         Add Admin
       </button>
     </div>
@@ -138,7 +138,9 @@
   </div>
 
   <script>
-    const modal = document.getElementById("task-modal");
+
+    
+    {% comment %} const modal = document.getElementById("task-modal");
     const formFields = document.getElementById("form-fields");
     const modalTitle = document.getElementById("modal-title");
     const closeModal = document.getElementById("close-modal");
@@ -199,10 +201,182 @@
     function confirmLogout() {
       const confirmAction = confirm("Are you sure you want to logout?");
       if (confirmAction) {
-        window.location.href = "/logout/";  // ✅ Redirect to logout URL
+        window.location.href = "/logout/";
       }
     }
-    
+     {% endcomment %}
+
+    // Fetch hospital branches and populate the table
+    async function fetchHospitalBranches() {
+      const response = await fetch('/get_hospital_branches/');
+      const data = await response.json();
+      const hospitalTable = document.getElementById("hospital-records");
+      hospitalTable.innerHTML = ""; // Clear existing data
+
+      data.branches.forEach(branch => {
+          hospitalTable.innerHTML += `
+              <tr id="branch-${branch.id}">
+                  <td class="py-2 px-4">${branch.branch_name}</td>
+                  <td class="py-2 px-4">${branch.branch_location}</td>
+                  <td class="py-2 px-4">${branch.branch_code}</td>
+                  <td class="py-2 px-4">
+                      <button onclick="editBranch('${branch.id}', '${branch.branch_name}', '${branch.branch_location}', '${branch.branch_code}')" class="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700">Edit</button>
+                      <button onclick="deleteBranch('${branch.id}')" class="bg-red-600 text-white px-3 py-1 rounded shadow hover:bg-red-700">Delete</button>
+                  </td>
+              </tr>`;
+      });
+  }
+
+  // Fetch admins and populate the table
+  async function fetchAdmins() {
+      const response = await fetch('/get_admins/');
+      const data = await response.json();
+      const adminTable = document.getElementById("admin-records");
+      adminTable.innerHTML = ""; // Clear existing data
+
+      data.admins.forEach(admin => {
+          adminTable.innerHTML += `
+              <tr id="admin-${admin.id}">
+                  <td class="py-2 px-4">${admin.name}</td>
+                  <td class="py-2 px-4">${admin.branch_id || 'N/A'}</td>
+                  <td class="py-2 px-4">${admin.email}</td>
+                  <td class="py-2 px-4">
+                      <button onclick="editAdmin('${admin.id}', '${admin.name}', '${admin.email}', '${admin.branch_id}')" class="bg-blue-600 text-white px-3 py-1 rounded shadow hover:bg-blue-700">Edit</button>
+                      <button onclick="deleteAdmin('${admin.id}')" class="bg-red-600 text-white px-3 py-1 rounded shadow hover:bg-red-700">Delete</button>
+                  </td>
+              </tr>`;
+      });
+  }
+
+  // Open modal for adding/editing hospital branches
+  function openBranchModal(task, id = "", name = "", location = "", code = "") {
+      document.getElementById("modal-title").innerText = task;
+      document.getElementById("form-fields").innerHTML = `
+          <input type="hidden" id="branch-id" value="${id}">
+          <input type="text" id="branch-name" class="w-full p-2 border rounded" placeholder="Hospital Name" value="${name}" required>
+          <input type="text" id="branch-location" class="w-full p-2 border rounded" placeholder="Location" value="${location}" required>
+          <input type="text" id="branch-code" class="w-full p-2 border rounded" placeholder="Hospital Code" value="${code}" required>
+      `;
+      document.getElementById("task-modal").classList.remove("hidden");
+  }
+
+  // Open modal for adding/editing admins
+  function openAdminModal(task, id = "", name = "", email = "", branchId = "") {
+      document.getElementById("modal-title").innerText = task;
+      document.getElementById("form-fields").innerHTML = `
+          <input type="hidden" id="admin-id" value="${id}">
+          <input type="text" id="admin-name" class="w-full p-2 border rounded" placeholder="Admin Name" value="${name}" required>
+          <input type="email" id="admin-email" class="w-full p-2 border rounded" placeholder="Email" value="${email}" required>
+          <input type="password" id="admin-password" class="w-full p-2 border rounded" placeholder="Password" required>
+          <select id="admin-branch" class="w-full p-2 border rounded">
+              <option value="" disabled>Select Hospital</option>
+          </select>
+      `;
+      loadBranchesDropdown(branchId);
+      document.getElementById("task-modal").classList.remove("hidden");
+  }
+
+  // Load hospital branches in dropdown for admin
+  async function loadBranchesDropdown(selectedId) {
+      const response = await fetch('/get_hospital_branches/');
+      const data = await response.json();
+      const dropdown = document.getElementById("admin-branch");
+      dropdown.innerHTML = '<option value="" disabled>Select Hospital</option>';
+      
+      data.branches.forEach(branch => {
+          dropdown.innerHTML += `<option value="${branch.branch_code}" ${branch.id === selectedId ? "selected" : ""}>${branch.branch_name}</option>`;
+      });
+  }
+
+  // Close modal
+  document.getElementById("close-modal").addEventListener("click", () => {
+      document.getElementById("task-modal").classList.add("hidden");
+  });
+
+  // Handle form submission for adding/editing branches and admins
+  document.getElementById("task-form").addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const task = document.getElementById("modal-title").innerText;
+      const id = document.getElementById("branch-id")?.value || document.getElementById("admin-id")?.value;
+
+      let url = "";
+      let method = "POST";
+      let bodyData = {};
+
+      if (task.includes("Hospital")) {
+          url = id ? `/edit_hospital_branch/${id}/` : "/add_hospital_branch/";
+          bodyData = {
+              branch_name: document.getElementById("branch-name").value,
+              branch_location: document.getElementById("branch-location").value,
+              branch_code: document.getElementById("branch-code").value
+          };
+      } else if (task.includes("Admin")) {
+          url = id ? `/edit_admin/${id}/` : "/add_admin/";
+          bodyData = {
+              name: document.getElementById("admin-name").value,
+              email: document.getElementById("admin-email").value,
+              password: document.getElementById("admin-password").value,
+              branch_id: document.getElementById("admin-branch").value
+          };
+      }
+
+      const response = await fetch(url, {
+          method: method,
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(bodyData),
+      });
+
+      const data = await response.json();
+      alert(data.message);
+      document.getElementById("task-modal").classList.add("hidden");
+
+      fetchHospitalBranches();
+      fetchAdmins();
+  });
+
+  // Edit Hospital Branch
+  function editBranch(id, name, location, code) {
+      openBranchModal("Edit Hospital", id, name, location, code);
+  }
+
+  // Edit Admin
+  function editAdmin(id, name, email, branch_code) {
+      openAdminModal("Edit Admin", id, name, email, branch_code);
+  }
+
+  // Delete Hospital Branch
+  async function deleteBranch(branchId) {
+      if (confirm("Are you sure you want to delete this branch?")) {
+          const response = await fetch(`/delete_hospital_branch/${branchId}/`, { method: "DELETE" });
+          const data = await response.json();
+          alert(data.message);
+          fetchHospitalBranches();
+      }
+  }
+
+  // Delete Admin
+  async function deleteAdmin(adminId) {
+      if (confirm("Are you sure you want to delete this admin?")) {
+          const response = await fetch(`/delete_admin/${adminId}/`, { method: "DELETE" });
+          const data = await response.json();
+          alert(data.message);
+          fetchAdmins();
+      }
+  }
+
+  // Confirm Logout
+  function confirmLogout() {
+      if (confirm("Are you sure you want to logout?")) {
+          window.location.href = "/logout/";
+      }
+  }
+
+  // Fetch data when the page loads
+  document.addEventListener("DOMContentLoaded", () => {
+      fetchHospitalBranches();
+      fetchAdmins();
+  });
+
   </script>
 </body>
 </html>

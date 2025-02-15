@@ -38,7 +38,7 @@ class Users(models.Model):
         ('TestCentre', 'Test Centre')
     ]
     )
-    branch = models.ForeignKey('HospitalBranches', on_delete=models.SET_NULL, null=True, blank=True)
+    branch = models.ForeignKey(HospitalBranches, to_field='branch_code',on_delete=models.SET_NULL, null=True, blank=True)
     is_active = models.BooleanField(default=True)
     profile_pic = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -60,30 +60,43 @@ class Patients(models.Model):
         return self.user.name
 
 
-class Doctors(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(Users, on_delete=models.CASCADE)
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.CASCADE)
-    specialization = models.CharField(max_length=100, null=True, blank=True)
-    phone = models.CharField(max_length=15, null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
-    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], null=True, blank=True)
-    dob = models.DateField(null=True, blank=True)
-
-    def __str__(self):
-        return self.user.name
-
-
 class Departments(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.CASCADE)
-    name = models.CharField(max_length=100)
+    branch = models.ForeignKey(HospitalBranches,to_field='branch_code', on_delete=models.CASCADE)
+    name = models.CharField(max_length=100, unique=True)
     description = models.TextField(null=True, blank=True)
     image = models.ImageField(upload_to='department_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
+
+class Doctors(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100, default="Doctor's Name")  # Doctor Name
+    department = models.ForeignKey(Departments, to_field='name', on_delete=models.CASCADE, null=True)  # ForeignKey to Departments
+    nmc_registration = models.IntegerField(unique=True, null=True)  # Unique NMC Registration Number
+    expertise = models.TextField(default="No expertise added")  # Expertise Field
+    education = models.TextField(default="No Education added")  # Education Details
+    hospitals_worked = models.TextField(default="syncHealth")  # List of Hospitals Previously Worked
+    achievements = models.TextField(default="No achievements added")  # Achievements 
+    rating = models.FloatField(default=0.0)  # Rating (Updated from Reviews)
+    branch = models.ForeignKey(HospitalBranches, to_field='branch_code', on_delete=models.CASCADE)  # Branch ForeignKey (Using branch_code)
+
+    def calculate_rating(self):
+        """Calculates average rating from the Reviews model."""
+        from core.models import Reviews  # Import inside function to avoid circular imports
+        reviews = Reviews.objects.filter(doctor=self)
+        if reviews.exists():
+            self.rating = sum(review.rating for review in reviews) / reviews.count()
+        else:
+            self.rating = 0.0
+        self.save()
+
+    def __str__(self):
+        return f"{self.name} - {self.department.name}" 
+
+
 
 
 class Appointments(models.Model):

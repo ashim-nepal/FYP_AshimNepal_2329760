@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard</title>
+  <title>Admin Dashboard | syncHealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans">
@@ -16,9 +16,9 @@
         <div>
           <span class="text-green-700 font-bold text-lg">syncHealth</span>
         </div>
-        <h1 class="text-3xl font-bold text-green-700">Administrator</h1>
+        <h1 class="text-3xl font-bold text-green-700">Administrator | <span id="branch-name">{{ branch_name}}</span></h1>
       </div>
-      <a href="#" class="text-green-700 font-semibold hover:underline">Logout</a>
+      <button onclick="confirmLogout()" class="text-green-700 font-semibold hover:underline">Logout</button>
     </div>
 
     <!-- Stats Section -->
@@ -46,25 +46,33 @@
       <h2 class="text-2xl font-bold text-green-700 mb-6">Admin's Tasks</h2>
       <div class="grid grid-cols-4 gap-6">
         <!-- Task Buttons -->
+        <button class="task-button bg-teal-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-teal-700 transform hover:-translate-y-1 transition"
+        data-task="Add Receptionist">Add Receptionist</button>
+        <button id="add-doctor-btn" class="task-button bg-green-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-700 transform hover:-translate-y-1 transition"
+        data-task="Add New Doctor">Add New Doctor</button>
+        <button class="task-button bg-red-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-700 transform hover:-translate-y-1 transition"
+        data-task="Manage Users">Manage Users</button>  
         <button class="task-button bg-green-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-700 transform hover:-translate-y-1 transition"
-          data-task="Add New Department">Add New Department</button>
-        <button class="task-button bg-green-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-700 transform hover:-translate-y-1 transition"
-          data-task="Add New Doctor">Add New Doctor</button>
+        data-task="Add New Department">Add New Department</button>
         <button class="task-button bg-purple-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-purple-700 transform hover:-translate-y-1 transition"
-          data-task="Manage Departments">Manage Departments</button>
+        data-task="Manage Departments">Manage Departments</button>
         <button class="task-button bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 transform hover:-translate-y-1 transition"
           data-task="Add New Health Package">Add New Health Package</button>
-        <button class="task-button bg-indigo-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-indigo-700 transform hover:-translate-y-1 transition"
-          data-task="Add Health Test Centre">Add Health Test Centre</button>
         <button class="task-button bg-yellow-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-yellow-700 transform hover:-translate-y-1 transition"
           data-task="Manage Health Packages">Manage Health Packages</button>
-        <button class="task-button bg-teal-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-teal-700 transform hover:-translate-y-1 transition"
-          data-task="Manage Site’s Banners">Manage Site’s Banners</button>
+        <button class="task-button bg-indigo-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-indigo-700 transform hover:-translate-y-1 transition"
+          data-task="Add Health Test Centre">Add Health Test Centre</button>
+        <button class="task-button bg-orange-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-orange-700 transform hover:-translate-y-1 transition"
+          data-task="Manage Health Test Centre">Manage Health Test Centre</button>
         <button class="task-button bg-red-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-700 transform hover:-translate-y-1 transition"
           data-task="Check Workflow Data">Check Workflow Data</button>
       </div>
     </div>
   </div>
+
+
+
+  
 
   <!-- Footer -->
   <footer class="text-center py-4 mt-10">
@@ -74,18 +82,22 @@
   <!-- Modal -->
   <div id="task-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
     <div class="bg-white w-96 p-6 rounded-lg shadow-lg">
-      <h3 id="modal-title" class="text-xl font-bold mb-4">Task Title</h3>
-      <p id="modal-body" class="mb-6">Perform the task here...</p>
-      <div class="flex justify-end space-x-4">
-        <button id="close-modal" class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded">Cancel</button>
-        <button class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Submit</button>
-      </div>
+      <h3 id="modal-title" class="text-xl font-bold mb-4"></h3>
+      <form id="task-form">
+        <div id="form-fields" class="space-y-4"></div>
+        <div class="flex justify-end space-x-4 mt-6">
+          <button type="button" id="close-modal" class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded">Cancel</button>
+          <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Submit</button>
+        </div>
+      </form>
     </div>
   </div>
 
+
+
   <script>
     // JavaScript for handling task buttons and modal
-    const taskButtons = document.querySelectorAll(".task-button");
+    {% comment %} const taskButtons = document.querySelectorAll(".task-button");
     const modal = document.getElementById("task-modal");
     const modalTitle = document.getElementById("modal-title");
     const modalBody = document.getElementById("modal-body");
@@ -106,7 +118,239 @@
     closeModal.addEventListener("click", () => {
       modal.classList.add("hidden");
       modal.classList.remove("flex");
+    }); {% endcomment %}
+
+
+    const modal = document.getElementById("task-modal");
+    const formFields = document.getElementById("form-fields");
+    const modalTitle = document.getElementById("modal-title");
+    const closeModal = document.getElementById("close-modal");
+
+    document.querySelectorAll(".task-button").forEach(button => {
+      button.addEventListener("click", function () {
+        openModal(this.dataset.task);
+      });
     });
+
+    function openModal(task) {
+      modal.classList.remove("hidden");
+      modal.classList.add("flex");
+      modalTitle.innerText = task;
+      formFields.innerHTML = "";
+
+      if (task === "Add Receptionist") {
+        formFields.innerHTML = `
+          <input type="text" id="name" placeholder="Full Name" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="email" id="email" placeholder="Email" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="password" id="password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="hidden" id="branch-id" value="{{ branch_code }}"> 
+        `;
+      } else if (task === "Add New Doctor") {
+        formFields.innerHTML = `
+          <input type="text" id="doc-name" placeholder="Doctor Name" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="email" id="doc-email" placeholder="Doctor Email" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="password" id="doc-password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="number" id="doc-nmc" placeholder="NMC Registration Number" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="text" id="doc-expertise" placeholder="Expertise" class="w-full p-2 border border-gray-300 rounded" required>
+          <textarea id="doc-education" placeholder="Education" class="w-full p-2 border border-gray-300 rounded"></textarea>
+          <input type="text" id="doc-hospitals" placeholder="Hospitals Worked At" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="text" id="doc-achievements" placeholder="Achievements" class="w-full p-2 border border-gray-300 rounded">
+          <select id="doc-department" class="w-full p-2 border border-gray-300 rounded" required>
+            <option value="">Select Department</option>
+          </select>
+          <input type="file" id="doc-profile" accept="image/*" class="w-full p-2 border border-gray-300 rounded">
+          <input type="hidden" id="branch-id" value="{{ branch_code }}">
+        `;
+      } else if (task === "Add New Department") {
+        formFields.innerHTML = `
+          <input type="text" id="dept-name" placeholder="Department Name" class="w-full p-2 border border-gray-300 rounded" required>
+          <textarea id="dept-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded"></textarea>
+          <input type="file" id="dept-image" name="image" accept="image/*" class="w-full p-2 border border-gray-300 rounded">
+          <input type="hidden" id="branch-id" value="{{ branch_code }}">
+        `;
+      }
+    }
+
+    document.getElementById("task-form").addEventListener("submit", async function (event) {
+      event.preventDefault();
+      const task = modalTitle.innerText;
+    
+      if (task === "Add Receptionist") {
+        await addReceptionist();
+      } else if (task === "Add New Doctor") {
+        await addDoctor();
+      } else if (task === "Add New Department") {
+        await addDepartment();
+      }
+      
+      modal.classList.add("hidden");
+    });
+
+    async function addReceptionist() {
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value.trim();
+      const branchId = document.getElementById("branch-id").value;
+    
+      const response = await fetch("/api/add-receptionist/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": getCSRFToken(),
+        },
+        body: JSON.stringify({ name, email, password, branch_id: branchId }),
+      });
+    
+      const data = await response.json();
+      alert(data.message || "Receptionist added successfully!");
+    }
+    
+    async function addDoctor() {
+      const formData = new FormData();
+      formData.append("name", document.getElementById("doc-name").value.trim());
+      formData.append("email", document.getElementById("doc-email").value.trim());
+      formData.append("password", document.getElementById("doc-password").value.trim());
+      formData.append("nmc", document.getElementById("doc-nmc").value.trim());
+      formData.append("expertise", document.getElementById("doc-expertise").value.trim());
+      formData.append("education", document.getElementById("doc-education").value.trim());
+      formData.append("hospitals_worked", document.getElementById("doc-hospitals").value.trim());
+      formData.append("achievements", document.getElementById("doc-achievements").value.trim());
+      formData.append("department", document.getElementById("doc-department").value);
+      formData.append("branch_id", document.getElementById("branch-id").value);
+      formData.append("profile_pic", document.getElementById("doc-profile").files[0]);
+      console.log(document.getElementById("branch_id"));
+    
+        try {
+          const response = await fetch("/api/add-doctor/", {
+              method: "POST",
+              body: formData,
+          });
+
+          const data = await response.json();
+          if (response.ok) {
+              alert("Doctor added successfully!");
+              location.reload();
+          } else {
+              alert("Error: " + data.error);
+          }
+      } catch (error) {
+          console.error("Error:", error);
+          alert("An error occurred. Try again!");
+      }
+    }
+    
+    async function addDepartment() {
+      const formData = new FormData();
+      formData.append("name", document.getElementById("dept-name").value.trim());
+      formData.append("description", document.getElementById("dept-description").value.trim());
+      formData.append("branch_id", document.getElementById("branch-id").value);
+      formData.append("image", document.getElementById("dept-image").files[0]);
+    
+      //const response = await fetch("/api/add-department/", {
+       // method: "POST",
+      //  headers: {
+      //    "X-CSRFToken": getCSRFToken(),
+      //  },
+      //  body: formData,
+     // });
+    
+      //const data = await response.json();
+     // alert(data.message || "Department added successfully!");
+
+     try {
+      const response = await fetch("/api/add-department/", {
+          method: 'POST',
+          body: formData
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+          alert(result.message);
+          location.reload();
+      } else {
+          alert("Error: " + result.error);
+      }
+  } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to add department.");
+  }
+    }
+    
+    /*
+    async function fetchDepartments() {
+      const response = await fetch("/api/get-departments/");
+      const departments = await response.json();
+      const select = document.getElementById("doc-department");
+      select.innerHTML = `<option value="">Select Department</option>`;
+      departments.forEach(dept => {
+        select.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
+      });
+    }
+    */
+
+    async function fetchDepartments() {
+      const departmentDropdown = document.getElementById("doc-department"); 
+
+      if (!departmentDropdown) {
+        console.error("Dropdown element not found in DOM");
+        return;
+      } else{
+        const response = await fetch("/api/get-departments/");
+        const data = await response.json();
+        console.log(data);
+      }
+  
+      try {
+          const response = await fetch("/api/get-departments/");
+          const data = await response.json();
+  
+          if (response.ok) {
+              departmentDropdown.innerHTML = '<option value="">Select Department</option>';
+              data.departments.forEach(dept => {
+                  departmentDropdown.innerHTML += `<option value="${dept.name}">${dept.name}</option>`;
+              });
+          } else {
+              console.error("Error fetching departments:", data.error);
+          }
+      } catch (error) {
+          console.error("Error fetching departments:", error);
+      }
+  }
+  document.getElementById("add-doctor-btn").addEventListener("click", fetchDepartments);
+    
+    function getCSRFToken() {
+      const name = "csrftoken";
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.startsWith(name + "=")) {
+          return cookie.substring(name.length + 1);
+        }
+      }
+      return "";
+    }
+
+
+
+    closeModal.addEventListener("click", () => {
+      modal.classList.add("hidden");
+      modal.classList.remove("flex");
+    });
+
+
+
+
+
+
+      // Confirm Logout
+  function confirmLogout() {
+    if (confirm("Are you sure you want to logout?")) {
+        window.location.href = "/logout/";
+    }
+}
+
+
+
   </script>
 </body>
 </html>
