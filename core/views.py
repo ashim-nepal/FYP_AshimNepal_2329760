@@ -1,10 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments
+from .models import HospitalBranches, Users, Doctors, Departments, Patients
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
-import json
+import json, uuid, datetime
 from .serializers import HospitalBranchSerializer, UserSerializer
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.hashers import check_password, make_password
@@ -14,6 +14,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.utils.dateparse import parse_date
 
 # Create your views here.
 def home(request):
@@ -23,7 +24,33 @@ def docProfile(request):
     return render(request, "docProfile.html")
 
 def patientProfile(request):
-    return render(request,"patientProfile.html")
+    if not request.session.get('is_authenticated'):
+        return redirect('/login/')
+    
+    if request.session.get('user_role') != 'patient':
+        return redirect('/login/')  # Prevent unauthorized access
+    
+    user_email = request.session.get('user_email')
+    print(user_email)
+    
+    #Get admin details from session
+    patient_id = request.session.get('user_id')
+    patient = Users.objects.get(id=patient_id)
+
+    # Get hospital name based on admin's branch_id
+    hospital_name = "Unknown Hospital"
+    if patient.branch:
+        branch = HospitalBranches.objects.get(branch_code=patient.branch.branch_code)
+        hospital_name = branch.branch_name  # Fetch the hospital name
+        hospital_branch = branch.branch_code
+        try:
+            patient_val = Patients.objects.get(email=user_email)
+        except Patients.DoesNotExist:
+            patient_val = None
+        
+        patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
+        print(patient_val.assigned_doctors_data)
+    return render(request,"patientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val})
 
 def adminDB(request):
     if not request.session.get('is_authenticated'):
@@ -100,6 +127,7 @@ def login_api(request):
                 
                 request.session['user_id'] = str(user.id)
                 request.session['user_role'] = user.role.lower()
+                request.session['user_email'] = str(user.email)
                 request.session.set_expiry(86400)
                 
                 
@@ -110,7 +138,7 @@ def login_api(request):
                     'masteradmin': '/masterAdminDB/',
                     'doctor': '/doctorDB/',
                     'admin': '/adminDB/',
-                    'patient': '/patientDB/',
+                    'patient': '/patientProfile/',
                     'reception': '/receptionDB/',
                     'testcentre': '/testCentreDB/',
                 }
@@ -341,6 +369,7 @@ def add_doctor(request):
                     # user=user,
                     department=department,
                     branch_id=branch_id,
+                    email=email,
                     nmc_registration=nmc,
                     expertise=expertise,
                     education=education,
@@ -402,7 +431,7 @@ def get_users(request):
 # Get All Departments
 def get_departments(request):
     try:
-        departments = Departments.objects.all().values('id', 'name', 'description')
+        departments = Departments.objects.all().values('id', 'name', 'description', 'branch_id')
         return JsonResponse({"departments": list(departments)}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
@@ -455,6 +484,184 @@ def delete_department(request, dept_id):
     dept = get_object_or_404(Departments, id=dept_id)
     dept.delete()
     return JsonResponse({"success": True, "message": "Department deleted successfully."})
+
+
+
+
+
+
+###### Reception Functionalities ###############
+# Add New Patient
+@csrf_exempt
+def add_patient(request):
+    if request.method == "POST":
+        data = request.POST
+        print(data)
+        try:
+            data = request.POST
+            dob = parse_date(data["dob"])  # Convert string to DateField format
+            if not dob:
+                return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+
+            # Auto-generate patient number
+            current_year = datetime.datetime.now().year
+            last_patient = Patients.objects.filter(patient_no__startswith=str(current_year)).order_by("-created_at").first()
+            if last_patient:
+                last_patient_no = int(last_patient.patient_no[-6:])  # Extract last 6 digits
+                new_patient_no = f"{current_year}{last_patient_no + 1:06d}"
+            else:
+                new_patient_no = f"{current_year}000001"
+
+            branch = HospitalBranches.objects.get(branch_code=data["branch_id"])
+            department = Departments.objects.get(name=data["department_id"])
+            
+            doctor_ids = json.loads(data["doctors"])  # Convert JSON string to list
+            assigned_doctors = []
+            for doc_id in doctor_ids:
+                doctor = Doctors.objects.get(id=doc_id)  # Fetch doctor by ID
+                assigned_doctors.append({"email": doctor.email, "name": doctor.name})  # Store required fields
+
+
+            # Transaction ensures data integrity across both tables
+            with transaction.atomic():
+                user = Users.objects.create(
+                    name=data["name"],
+                    email=data["email"],
+                    password=make_password(data["password"]),
+                    role="Patient",
+                    branch=branch,
+                    is_active=True,
+                    profile_pic="profile_pics/patientPics.png"
+                )
+
+                patient = Patients.objects.create(
+                    # user=user,
+                    patient_no=new_patient_no,
+                    name=data["name"],
+                    email=data["email"],
+                    age=data["age"],
+                    dob=dob,
+                    gender=data["gender"],
+                    address=data["address"],
+                    health_issues=data["health_issues"],
+                    branch=branch,
+                    assigned_doctors=json.dumps(assigned_doctors)
+                )
+
+
+            return JsonResponse({"success": True, "message": "Patient added successfully."}, status=201)
+
+        except Exception as e:
+            print("Error:", str(e))
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+# Get Doctors for Dropdown
+def get_doctors_by_department(request, department_name, branch_id):
+    doctors = Doctors.objects.filter(department=department_name, branch=branch_id)
+    doctor_list = [{"id": doc.id, "name": doc.name, "email": doc.email} for doc in doctors]
+    return JsonResponse(doctor_list, safe=False)
+
+# Get All Patients for Table Display
+def get_patients(request):
+    patients = Patients.objects.select_related("branch").all()
+    data = []
+    
+    for patient in patients:
+        #  Parse assigned_doctors JSON safely
+        try:
+            assigned_doctors = json.loads(patient.assigned_doctors) if patient.assigned_doctors else []
+        except json.JSONDecodeError:
+            assigned_doctors = []
+     
+
+        data.append({
+            "id": str(patient.id),
+            "patient_no": patient.patient_no,
+            "name": patient.name,
+            "email":patient.email,
+            "age": patient.age,
+            "gender": patient.gender,
+            "address": patient.address,
+            "health_issues":patient.health_issues,
+            "assigned_doctors": assigned_doctors
+        })
+    return JsonResponse(data, safe=False)
+
+
+
+@csrf_exempt
+def edit_patient(request, patient_id):
+    if request.method == 'POST':
+        try:
+            # Get existing patient
+            patient = Patients.objects.get(id=patient_id)
+
+            # Parse request data
+            data = json.loads(request.body.decode("utf-8"))
+            new_address = data.get("address")
+            new_health_issue = data.get("health_issue")
+            new_doctors = data.get("assigned_doctors", [])
+
+            # Update address
+            if new_address:
+                patient.address = new_address
+
+            # Append new health issue (if any)
+            if new_health_issue:
+                existing_issues = patient.health_issues.split(", ") if patient.health_issues else []
+                if new_health_issue not in existing_issues:
+                    existing_issues.append(new_health_issue)
+                    patient.health_issues = ", ".join(existing_issues)  # Save back to DB
+
+            # Append new doctors while keeping existing ones
+            try:
+                assigned_doctors = json.loads(patient.assigned_doctors) if patient.assigned_doctors else []
+            except json.JSONDecodeError:
+                assigned_doctors = []
+            print(assigned_doctors)
+
+            # Ensure new doctors are not already assigned
+            for new_doc in new_doctors:
+                if not any(doc['email'] == new_doc['email'] for doc in assigned_doctors):
+                    assigned_doctors.append(new_doc)  # Append only if not duplicate
+
+            patient.assigned_doctors = json.dumps(assigned_doctors)  # Convert list to JSON string
+
+            # Save updates
+            patient.save()
+            return JsonResponse({"success": True, "message": "Patient updated successfully.", "assigned_doctors": assigned_doctors}, status=200)
+
+        except Patients.DoesNotExist:
+            return JsonResponse({"error": "Patient not found."}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+# Delete Patient
+@csrf_exempt
+def delete_patient(request, patient_email):
+    if request.method == 'DELETE':
+        try:
+            user = Users.objects.filter(email=patient_email).first()
+            patient = Patients.objects.filter(email=patient_email).first()
+            
+            if user:
+                user.delete()  # Delete user from Users table
+                
+            if patient:
+                patient.delete()
+                
+            return JsonResponse({"success": True, "message": "Patient login credentials deleted."}, status=200)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
 
 # def create_user_view(request):
 #     email = 'masteradmin@sync.com'

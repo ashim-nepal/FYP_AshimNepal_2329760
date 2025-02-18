@@ -10,14 +10,16 @@
 
     <section>
         Nav here
+        <button onclick="confirmLogout()" class="text-green-700 font-semibold hover:underline">Logout</button>
       </section>
 
 
   <section class="p-6">
     <!-- Header -->
     <header class="text-2xl text-[#29622E] font-bold text-center mb-8">
-      Patient's Profile | Patient Name
+      Patient's Profile | {{patients.name }}
     </header>
+
 
     <!-- Main Content -->
     <div class="flex flex-wrap lg:flex-nowrap gap-6">
@@ -25,17 +27,20 @@
       <div class="flex flex-col items-center bg-white shadow-md p-6 rounded-lg w-full lg:w-1/3">
         <!-- Profile Image -->
         <div class="w-36 h-36 bg-gray-200 rounded-full mb-4"></div>
-        <p class="text-sm text-[#29622E] mb-4">Patient No: 24123456789</p>
+        <p class="text-sm text-[#29622E] mb-4">Patient No: {{patients.patient_no}}</p>
       </div>
 
       <!-- Right Section -->
       <div class="bg-white shadow-md p-6 rounded-lg w-full lg:w-2/3">
-        <p class="mb-4"><span class="font-bold">Name:</span> Patient Name</p>
-        <p class="mb-4"><span class="font-bold">Patient Since:</span> 14-05-2021</p>
-        <p class="mb-4"><span class="font-bold">Age:</span> 48</p>
-        <p class="mb-4"><span class="font-bold">Gender:</span> M/F</p>
-        <p class="mb-4"><span class="font-bold">Address:</span> Chabahil, Kathmandu-6</p>
-        <p class="mb-4"><span class="font-bold">Consultant Doctor(s):</span> Doctor 1, Doctor 2</p>
+        <p class="mb-4"><span class="font-bold">Name:</span> {{ patients.name}}</p>
+        <p class="mb-4"><span class="font-bold">Patient Since:</span> {{ patients.created_at }}</p>
+        <p class="mb-4"><span class="font-bold">Age:</span> {{ patients.age}}</p>
+        <p class="mb-4"><span class="font-bold">Gender:</span> {{ patients.gender}}</p>
+        <p class="mb-4"><span class="font-bold">Address:</span> {{ patients.address}}</p>
+        <p class="mb-4"><span class="font-bold">Consultant Doctor(s):</span> {% for doctor in patients.assigned_doctors_data %}
+          {{ doctor.name }}{% if not forloop.last %}, {% endif %}
+      {% endfor %} 
+        </p>
         <p class="font-bold mb-2">Health Charts:</p>
 
         <!-- Placeholder for Health Chart -->
@@ -63,5 +68,13 @@
   <section>
     Footer here
   </section>
+  <script>
+      // Confirm Logout
+  function confirmLogout() {
+    if (confirm("Are you sure you want to logout?")) {
+        window.location.href = "/logout/";
+    }
+}
+  </script>
 </body>
 </html>

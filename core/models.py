@@ -1,7 +1,26 @@
 from django.db import models
-import uuid
+import uuid, json
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils.timezone import now
+from django.core.exceptions import ValidationError
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.utils.html import strip_tags
+
+
+@receiver(post_save, sender=User)
+def send_welcome_email(sender, instance, created, **kwargs):
+    if created:  # Send email only when a user is created
+        subject = "Welcome to Our Service"
+        message = f"Your account has been created. Your initial password is: {instance.password}. Please reset it as soon as possible."
+        email_from = settings.EMAIL_HOST_USER
+        recipient_list = [instance.email]
+
+        send_mail(subject, strip_tags(message), email_from, recipient_list)
 
 class HospitalBranches(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -49,15 +68,46 @@ class Users(models.Model):
 
 class Patients(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    user = models.OneToOneField(Users, on_delete=models.CASCADE)
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.CASCADE)
-    phone = models.CharField(max_length=15, null=True, blank=True)
-    address = models.TextField(null=True, blank=True)
-    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Other', 'Other')], null=True, blank=True)
-    dob = models.DateField(null=True, blank=True)
+    patient_no = models.CharField(max_length=20, unique=True, editable=False, blank=True)  # Unique Patient No
+    name = models.CharField(max_length=100, default="Patients Name")
+    dob = models.DateField(blank=True, null=True)
+    age = models.IntegerField(default=0)
+    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female')], default="Male")
+    address = models.TextField(default="Patient's addredd")
+    email = models.EmailField(unique=True, null=True, blank=True)
+    branch = models.ForeignKey('HospitalBranches', to_field='branch_code', on_delete=models.CASCADE)  # FK to branch_code
+    assigned_doctors = models.JSONField(default=dict, blank=True)  # Store {doc_id: doc_name} pairs
+    health_issues = models.JSONField(default=list, blank=True)  # List of health issues
+
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        # Generate a unique Patient No (YY0000001 format)
+        if not self.patient_no:
+            year_prefix = now().strftime("%y")
+            last_patient = Patients.objects.filter(patient_no__startswith=year_prefix).order_by('-patient_no').first()
+            last_count = int(last_patient.patient_no[2:]) + 1 if last_patient else 1
+            self.patient_no = f"{year_prefix}{str(last_count).zfill(7)}"
+
+        # Auto-calculate Age
+        self.age = now().year - self.dob.year
+        super().save(*args, **kwargs)
+
+    def assign_doctor(self, doctor_id, doctor_name, health_issue):
+        """
+        Assigns an additional doctor to the patient and adds a new health issue.
+        """
+        if doctor_id not in self.assigned_doctors:
+            self.assigned_doctors[doctor_id] = doctor_name
+        self.health_issues.append(health_issue)
+        self.save()
+
+    def get_assigned_doctor_names(self):
+        """ Return a comma-separated list of assigned doctor names. """
+        return ', '.join(self.assigned_doctors.values())
 
     def __str__(self):
-        return self.user.name
+        return f"{self.patient_no} - {self.name}"
 
 
 class Departments(models.Model):
@@ -74,6 +124,7 @@ class Departments(models.Model):
 class Doctors(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, default="Doctor's Name")  # Doctor Name
+    email = models.EmailField(unique=True, null=True, blank=True)
     department = models.ForeignKey(Departments, to_field='name', on_delete=models.CASCADE, null=True)  # ForeignKey to Departments
     nmc_registration = models.IntegerField(unique=True, null=True)  # Unique NMC Registration Number
     expertise = models.TextField(default="No expertise added")  # Expertise Field
