@@ -15,6 +15,10 @@ from django.contrib.sessions.models import Session
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.utils.dateparse import parse_date
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils.html import strip_tags
+
 
 # Create your views here.
 def home(request):
@@ -499,6 +503,8 @@ def add_patient(request):
         print(data)
         try:
             data = request.POST
+            pswd = data["password"]
+            receiver_email = data["email"]
             dob = parse_date(data["dob"])  # Convert string to DateField format
             if not dob:
                 return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
@@ -547,6 +553,12 @@ def add_patient(request):
                     branch=branch,
                     assigned_doctors=json.dumps(assigned_doctors)
                 )
+                subject = "Welcome to syncHealth Digital"
+                message = f"Your account has been created. Your initial password is: {pswd} | for email: {receiver_email}. Please reset it as soon as possible."
+                email_from = settings.EMAIL_HOST_USER
+                receipent_list = [receiver_email]
+                send_mail(subject, strip_tags(message), email_from, receipent_list)
+                
 
 
             return JsonResponse({"success": True, "message": "Patient added successfully."}, status=201)
