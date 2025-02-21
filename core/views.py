@@ -473,21 +473,104 @@ def delete_user(request, user_id):
 
 # Edit Department
 @csrf_exempt
-def edit_department(request, dept_id):
-    if request.method == 'POST':
-        data = json.loads(request.body.decode('utf-8'))
-        dept = get_object_or_404(Departments, id=dept_id)
-        dept.name = data['name']
-        dept.description = data['description']
-        dept.save()
-        return JsonResponse({"success": True, "message": "Department updated successfully."})
+def edit_department(request, department_id):
+    if request.method == "POST":
+        try:
+            department = Departments.objects.get(id=department_id)
+            data = json.loads(request.body.decode("utf-8"))
+
+            department.name = data.get("name", department.name)
+            department.description = data.get("description", department.description)
+            department.save()
+
+            return JsonResponse({"success": True, "message": "Department updated successfully!"}, status=200)
+
+        except Departments.DoesNotExist:
+            return JsonResponse({"error": "Department not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 # Delete Department
 @csrf_exempt
-def delete_department(request, dept_id):
-    dept = get_object_or_404(Departments, id=dept_id)
-    dept.delete()
-    return JsonResponse({"success": True, "message": "Department deleted successfully."})
+def delete_department(request, department_id):
+    if request.method == "DELETE":
+        try:
+            department = Departments.objects.get(id=department_id)
+            department.delete()
+            return JsonResponse({"success": True, "message": "Department deleted successfully!"}, status=200)
+        except Departments.DoesNotExist:
+            return JsonResponse({"error": "Department not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+
+# Get All Users (Receptionists & Doctors)
+def get_users(request):
+    receptionists = Users.objects.filter(role="Reception").values("id", "name", "email", "branch")
+    doctors = Doctors.objects.select_related("user", "department").values("id", "name", "email", "department", "nmc_registration", "branch", "achievements", "education", "hospitals_worked", "expertise")
+
+    return JsonResponse({"receptionists": list(receptionists), "doctors": list(doctors)}, status=200)
+
+
+
+
+# Edit Doctor
+@csrf_exempt
+def edit_doctor(request, doctor_id):
+    if request.method == 'POST':
+        try:
+            doctor = Doctors.objects.get(id=doctor_id)
+            data = json.loads(request.body.decode("utf-8"))
+
+            doctor.achievements = data.get("achievements", doctor.achievements)
+            doctor.education = data.get("education", doctor.education)
+            doctor.expertise = data.get("expertise", doctor.expertise)
+            doctor.hospitals_worked = data.get("hospitals_worked", doctor.hospitals_worked)
+            doctor.save()
+
+            return JsonResponse({"success": True, "message": "Doctor updated successfully!"}, status=200)
+        except Doctors.DoesNotExist:
+            return JsonResponse({"error": "Doctor not found."}, status=404)
+
+# Delete Receptionist
+@csrf_exempt
+def delete_user(request, user_id):
+    if request.method == 'DELETE':
+        try:
+            user = Users.objects.get(id=user_id)
+            user.delete()
+            return JsonResponse({"success": True, "message": "Receptionist deleted successfully!"}, status=200)
+        except Users.DoesNotExist:
+            return JsonResponse({"error": "User not found."}, status=404)
+
+# Delete the doctor
+@csrf_exempt
+def delete_doctor(request, doctor_id):
+    if request.method == 'DELETE':
+        try:
+            # Find doctor in Doctors table
+            doctor = Doctors.objects.get(id=doctor_id)
+            user_email = doctor.email  # Get doctor's email before deleting
+            print(user_email)
+
+            # Delete doctor from Doctors table
+            doctor.delete()
+
+            # Delete user from Users table using email
+            Users.objects.filter(email=user_email).delete()
+
+            return JsonResponse({"success": True, "message": "Doctor deleted successfully from both tables!"}, status=200)
+
+        except Doctors.DoesNotExist:
+            return JsonResponse({"error": "Doctor not found."}, status=404)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
 
 
 

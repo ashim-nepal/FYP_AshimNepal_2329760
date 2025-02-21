@@ -50,11 +50,11 @@
         data-task="Add Receptionist">Add Receptionist</button>
         <button id="add-doctor-btn" class="task-button bg-green-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-700 transform hover:-translate-y-1 transition"
         data-task="Add New Doctor">Add New Doctor</button>
-        <button class="task-button bg-red-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-700 transform hover:-translate-y-1 transition"
+        <button id="Manage Users" class="task-button bg-red-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-700 transform hover:-translate-y-1 transition"
         data-task="Manage Users">Manage Users</button>  
         <button class="task-button bg-green-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-green-700 transform hover:-translate-y-1 transition"
         data-task="Add New Department">Add New Department</button>
-        <button class="task-button bg-purple-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-purple-700 transform hover:-translate-y-1 transition"
+        <button id="Manage Departments" class="task-button bg-purple-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-purple-700 transform hover:-translate-y-1 transition"
         data-task="Manage Departments">Manage Departments</button>
         <button class="task-button bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 transform hover:-translate-y-1 transition"
           data-task="Add New Health Package">Add New Health Package</button>
@@ -80,8 +80,8 @@
   </footer>
 
   <!-- Modal -->
-  <div id="task-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
-    <div class="bg-white w-96 p-6 rounded-lg shadow-lg">
+  <div id="task-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-80 flex justify-center items-center">
+    <div class="bg-white w-150 p-6 rounded-lg shadow-lg">
       <h3 id="modal-title" class="text-xl font-bold mb-4"></h3>
       <form id="task-form">
         <div id="form-fields" class="space-y-4"></div>
@@ -92,6 +92,24 @@
       </form>
     </div>
   </div>
+
+
+
+  <!-- Edit Department Modal -->
+<div id="edit-department-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white w-196 p-6 rounded-lg shadow-lg">
+      <h3 class="text-xl font-bold mb-4">Edit Department</h3>
+      <input type="hidden" id="edit-dept-id">
+      <div class="space-y-4">
+          <input type="text" id="edit-dept-name" placeholder="Department Name" class="w-full p-2 border border-gray-300 rounded">
+          <textarea id="edit-dept-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded"></textarea>
+      </div>
+      <div class="flex justify-end space-x-4 mt-6">
+          <button id="close-edit-modal" class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded">Cancel</button>
+          <button onclick="submitEditDepartment()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Save</button>
+      </div>
+  </div>
+</div>
 
 
 
@@ -169,6 +187,61 @@
           <input type="hidden" id="branch-id" value="{{ branch_code }}">
         `;
       }
+
+      else if(task == "Manage Departments"){
+        formFields.innerHTML = `
+            <div class="overflow-x-auto">
+            <table class="w-full border border-gray-300">
+              <thead>
+                <tr class="bg-gray-200 text-left text-sm font-semibold text-gray-700">
+                  <th class="px-6 py-3 border-b">Department Name</th>
+                  <th class="px-6 py-3 border-b">Description</th>
+                  <th class="px-6 py-3 border-b">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="departments-list"></tbody>
+            </table>
+          </div>
+        `;
+      }
+
+      else if(task == "Manage Users"){
+        formFields.innerHTML = `
+                        <h3 class="text-lg font-semibold text-gray-700 mb-4">Receptionists</h3>
+                <div class="overflow-x-auto">
+                  <table class="w-full border border-gray-300">
+                    <thead>
+                      <tr class="bg-gray-200 text-left text-sm font-semibold text-gray-700">
+                        <th class="px-6 py-3 border-b">Name</th>
+                        <th class="px-6 py-3 border-b">Email</th>
+                        <th class="px-6 py-3 border-b">Branch</th>
+                        <th class="px-6 py-3 border-b">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="receptionists-list"></tbody>
+                  </table>
+                </div>
+
+                <h3 class="text-lg font-semibold text-gray-700 mt-6 mb-4">Doctors</h3>
+                <input type="text" id="search-nmc" placeholder="Search by NMC Number" class="w-full p-2 border border-gray-300 rounded mb-2">
+                <div class="overflow-x-auto">
+                  <table class="w-full border border-gray-300">
+                    <thead>
+                      <tr class="bg-gray-200 text-left text-sm font-semibold text-gray-700">
+                        <th class="px-6 py-3 border-b">Name</th>
+                        <th class="px-6 py-3 border-b">Email</th>
+                        <th class="px-6 py-3 border-b">Department</th>
+                        <th class="px-6 py-3 border-b">NMC</th>
+                        <th class="px-6 py-3 border-b">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody id="doctors-list"></tbody>
+                  </table>
+                </div>
+        `;
+      }
+
+
     }
 
     document.getElementById("task-form").addEventListener("submit", async function (event) {
@@ -329,6 +402,314 @@
       }
       return "";
     }
+
+
+
+    // Fetch & Display Departments in departments management window
+async function fetchDepartments_manage() {
+  try {
+      let response = await fetch("/api/get-departments/");
+      let data = await response.json();
+      const branchId = "{{ branch_code }}";
+      const filteredDepartments = data.departments.filter(
+              (departments) => departments.branch_id === branchId
+            );
+            console.log(filteredDepartments);
+
+      if (response.ok) {
+          let tableBody = document.getElementById("departments-list");
+          console.log(tableBody);
+          tableBody.innerHTML = "";
+
+          filteredDepartments.forEach(dept => {
+              let row = `<tr class="border">
+                  <td class="p-2 border">${dept.name}</td>
+                  <td class="p-2 border">${dept.description}</td>
+                  <td class="p-2 border">
+                      <button onclick="openEditDepartment('${dept.id}', '${dept.name}', '${dept.description}')" class="text-blue-600 hover:underline">Edit</button>
+                      <button onclick="deleteDepartment('${dept.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
+                  </td>
+              </tr>`;
+              tableBody.innerHTML += row;
+          });
+
+      } else {
+          console.error("Error fetching departments:", data.error);
+      }
+  } catch (error) {
+      console.error("Error fetching departments:", error);
+  }
+}
+
+
+  document.getElementById("Manage Departments").addEventListener("click", () => {
+  document.getElementById("task-modal").classList.remove("hidden"); // Open modal
+  document.getElementById("modal-title").innerText = "Manage Departments";
+  fetchDepartments_manage(); // Load department records
+});
+
+
+// Open Edit Modal & Populate Fields
+function openEditDepartment(deptId, name, description) {
+    document.getElementById("modal-title").innerText = "Edit Department";
+    document.getElementById("form-fields").innerHTML = `
+        <input type="hidden" id="edit-dept-id" value="${deptId}">
+        <div class="space-y-4">
+            <input type="text" id="edit-dept-name" value="${name}" placeholder="Department Name" readonly class="w-full p-2 border border-gray-300 rounded">
+            <textarea id="edit-dept-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded">${description}</textarea>
+        </div>
+        <div class="flex justify-end space-x-4 mt-6">
+            <button onclick="submitEditDepartment()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Save</button>
+        </div>
+    `;
+}
+
+// Close Edit Modal
+document.getElementById("close-edit-modal").addEventListener("click", () => {
+  document.getElementById("edit-department-modal").classList.add("hidden");
+});
+
+//Submit Edit Department
+async function submitEditDepartment() {
+  let departmentId = document.getElementById("edit-dept-id").value;
+  let updatedData = {
+      name: document.getElementById("edit-dept-name").value,
+      description: document.getElementById("edit-dept-description").value
+  };
+
+  try {
+      let response = await fetch(`/api/edit-department/${departmentId}/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedData)
+      });
+
+      let result = await response.json();
+      if (response.ok) {
+          alert("Department updated successfully!");
+          document.getElementById("task-modal").classList.add("hidden");
+          fetchDepartments_manage(); // Refresh data
+      } else {
+          alert("Error: " + result.error);
+      }
+  } catch (error) {
+      console.error("Error updating department:", error);
+  }
+}
+
+// Delete Department
+async function deleteDepartment(departmentId) {
+  if (!confirm("Are you sure you want to delete this department?")) return;
+
+  try {
+      let response = await fetch(`/api/delete-department/${departmentId}/`, {
+          method: "DELETE"
+      });
+
+      let result = await response.json();
+      if (response.ok) {
+          alert("Department deleted successfully!");
+          fetchDepartments_manage();
+      } else {
+          alert("Error: " + result.error);
+      }
+  } catch (error) {
+      console.error("Error deleting department:", error);
+  }
+}
+
+// Fetch departments on page load
+fetchDepartments_manage();
+
+
+
+// ******************* Manage users ******************
+
+document.querySelector("[data-task='Manage Users']").addEventListener("click", () => {
+  document.getElementById("task-modal").classList.remove("hidden");
+  document.getElementById("modal-title").innerText = "Manage Users";
+  fetchUsers(); // Load users
+});
+
+// Fetch & Display Users
+async function fetchUsers() {
+  try {
+      let response = await fetch("/api/get-users/");
+      let data = await response.json();
+      const branchId = "{{ branch_code }}";
+      console.log(data);
+      console.log(branchId);
+      if (response.ok) {
+          let receptionistTable = document.getElementById("receptionists-list");
+          let doctorsTable = document.getElementById("doctors-list");
+
+
+          const filteredReceptionists = data.receptionists.filter(
+            (receptionists) => receptionists.branch === branchId
+          );
+          console.log(filteredReceptionists);
+
+          const filteredDoctors = data.doctors.filter(
+            (doctors) => doctors.branch === branchId
+          );
+          console.log(filteredDoctors);
+
+          receptionistTable.innerHTML = ""; 
+          doctorsTable.innerHTML = "";
+
+          // Populate Receptionists (View Only & Delete)
+          filteredReceptionists.forEach(user => {
+              let row = `<tr class="border">
+                  <td class="p-2 border">${user.name}</td>
+                  <td class="p-2 border">${user.email}</td>
+                  <td class="p-2 border">${user.branch}</td>
+                  <td class="p-2 border">
+                      <button onclick="deleteUser('${user.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
+                  </td>
+              </tr>`;
+              receptionistTable.innerHTML += row;
+          });
+
+          // Populate Doctors (View, Edit & Delete)
+          filteredDoctors.forEach(doctor => {
+              let row = `<tr class="border doctor-row" data-nmc="${doctor.nmc_registration}">
+                  <td class="p-2 border">${doctor.name}</td>
+                  <td class="p-2 border">${doctor.email}</td>
+                  <td class="p-2 border">${doctor.department}</td>
+                  <td class="p-2 border">${doctor.nmc_registration}</td>
+                  <td class="p-2 border">
+                      <button onclick="openEditDoctor('${doctor.id}', '${doctor.achievements}', '${doctor.education}', '${doctor.expertise}', '${doctor.hospitals_worked}', '${doctor.name}', '${doctor.nmc_registration}', '${doctor.department}')" class="text-blue-600 hover:underline">Edit</button>
+                      <button onclick="deleteDoctor('${doctor.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
+                  </td>
+              </tr>`;
+              doctorsTable.innerHTML += row;
+          });
+      }
+  } catch (error) {
+      console.error("Error fetching users:", error);
+  }
+}
+
+fetchUsers();
+
+
+
+// Filter Doctors by NMC Number
+document.addEventListener("input", (event) => {
+  if (event.target.id === "search-nmc") {
+      let searchValue = event.target.value.trim();
+      document.querySelectorAll(".doctor-row").forEach(row => {
+          row.style.display = row.dataset.nmc.includes(searchValue) ? "" : "none";
+      });
+  }
+});
+
+
+
+
+
+
+// Delete Receptionist
+async function deleteUser(userId) {
+  if (confirm("Are you sure you want to delete this receptionist?")) {
+      try {
+          let response = await fetch(`/api/delete-user/${userId}/`, { method: "DELETE" });
+          let result = await response.json();
+          if (response.ok) {
+              alert("Receptionist deleted successfully!");
+              fetchUsers();
+          } else {
+              alert("Error: " + result.error);
+          }
+      } catch (error) {
+          console.error("Error deleting receptionist:", error);
+      }
+  }
+}
+
+
+// Open Edit Doctor Modal
+function openEditDoctor(doctorId, achievements, education, expertise, hospitals_worked, name, nmc, department) {
+  document.getElementById("modal-title").innerText = "Edit Doctor";
+  console.log(doctorId);
+  console.log(achievements);
+  document.getElementById("form-fields").innerHTML = `
+      <span class="bold">${nmc} - ${name} | ${department}</span><br><br>
+      <input type="hidden" id="edit-doctor-id" value="${doctorId}">
+      <label>Achievements</label>
+      <input type="text" id="edit-achievements" value="${achievements}" class="w-full p-2 border border-gray-300 rounded">
+      <label>Education</label>
+      <input type="text" id="edit-education" value="${education}" class="w-full p-2 border border-gray-300 rounded">
+      <label>Expertise</label>
+      <input type="text" id="edit-expertise" value="${expertise}" class="w-full p-2 border border-gray-300 rounded">
+      <label>Hospitals Worked</label>
+      <input type="text" id="edit-hospitals-worked" value="${hospitals_worked}" class="w-full p-2 border border-gray-300 rounded">
+      <button onclick="submitEditDoctor()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mt-4">Save</button>
+  `;
+}
+
+// Submit Edit Doctor
+async function submitEditDoctor() {
+  let doctorId = document.getElementById("edit-doctor-id").value;
+  let updatedData = {
+      achievements: document.getElementById("edit-achievements").value,
+      education: document.getElementById("edit-education").value,
+      expertise: document.getElementById("edit-expertise").value,
+      hospitals_worked: document.getElementById("edit-hospitals-worked").value
+  };
+
+  try {
+      let response = await fetch(`/api/edit-doctor/${doctorId}/`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updatedData)
+      });
+
+      let result = await response.json();
+      if (response.ok) {
+          alert("Doctor updated successfully!");
+          document.getElementById("task-modal").classList.add("hidden");
+          fetchUsers();
+      } else {
+          alert("Error: " + result.error);
+      }
+  } catch (error) {
+      console.error("Error updating doctor:", error);
+  }
+}
+
+
+
+// Delete Doctor
+async function deleteDoctor(doctorId) {
+  if (confirm("Are you sure you want to delete this doctor?")) {
+      try {
+          let response = await fetch(`/api/delete-doctor/${doctorId}/`, { method: "DELETE" });
+          let result = await response.json();
+          if (response.ok) {
+              alert("Doctor deleted successfully!");
+              fetchUsers();
+          } else {
+              alert("Error: " + result.error);
+          }
+      } catch (error) {
+          console.error("Error deleting doctor:", error);
+      }
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
