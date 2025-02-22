@@ -37,6 +37,10 @@ urlpatterns = [
     path('api/edit-doctor/<str:doctor_id>/', views.edit_doctor, name='edit_doctor'),
     path('api/delete-user/<str:user_id>/', views.delete_user, name='delete_user'),
     path('api/delete-doctor/<str:doctor_id>/', views.delete_doctor, name='delete_doctor'),
+    path('api/add-health-package/', views.add_health_package, name='add_health_package'),
+    path("api/get-health-packages/", views.get_health_packages, name="get_health_packages"),
+    path("api/edit-health-package/<uuid:package_id>/", views.edit_health_package, name="edit_health_package"),
+    path("api/delete-health-package/<uuid:package_id>/", views.delete_health_package, name="delete_health_package"),
     #path for reception task
     path("api/get-doctors/<str:department_name>/<str:branch_id>/", views.get_doctors_by_department, name="get_doctors_by_department"),
     path('api/add-patient/', views.add_patient, name='add_patient'),

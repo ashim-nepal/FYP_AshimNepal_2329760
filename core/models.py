@@ -125,7 +125,7 @@ class Doctors(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100, default="Doctor's Name")  # Doctor Name
     email = models.EmailField(unique=True, null=True, blank=True)
-    department = models.ForeignKey(Departments, to_field='name', on_delete=models.CASCADE, null=True)  # ForeignKey to Departments
+    department = models.TextField(default="No Departments added")
     nmc_registration = models.IntegerField(unique=True, null=True)  # Unique NMC Registration Number
     expertise = models.TextField(default="No expertise added")  # Expertise Field
     education = models.TextField(default="No Education added")  # Education Details
@@ -190,12 +190,12 @@ class Messages(models.Model):
         return f"{self.sender.name} -> {self.receiver.name}"
 
 
-class HealthTests(models.Model):
+class HealthPackages(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     description = models.TextField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.SET_NULL, null=True, blank=True)
+    branch = models.ForeignKey(HospitalBranches,to_field='branch_code', on_delete=models.CASCADE, null=True, blank=True)
     image = models.ImageField(upload_to='health_test_images/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -203,11 +203,11 @@ class HealthTests(models.Model):
         return self.name
 
 
-class HealthTestBookings(models.Model):
+class HealthPackageBookings(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    test = models.ForeignKey(HealthTests, on_delete=models.CASCADE)
+    test = models.ForeignKey(HealthPackages, on_delete=models.CASCADE)
     patient = models.ForeignKey(Patients, on_delete=models.CASCADE)
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.CASCADE)
+    branch = models.ForeignKey(HospitalBranches,to_field='branch_code', on_delete=models.CASCADE)
     test_date = models.DateField()
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Completed', 'Completed')], default='Pending')
     report_file = models.FileField(upload_to='test_reports/', null=True, blank=True)
@@ -220,7 +220,7 @@ class HealthTestBookings(models.Model):
 class TestResults(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     patient = models.ForeignKey(Patients, on_delete=models.CASCADE)
-    test = models.ForeignKey(HealthTests, on_delete=models.CASCADE)
+    test = models.ForeignKey(HealthPackages, on_delete=models.CASCADE)
     result_value = models.FloatField()
     result_date = models.DateField()
 
@@ -268,7 +268,7 @@ class Banners(models.Model):
 class Payments(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     user = models.ForeignKey(Users, on_delete=models.CASCADE)
-    booking = models.ForeignKey(HealthTestBookings, on_delete=models.CASCADE)
+    booking = models.ForeignKey(HealthPackageBookings, on_delete=models.CASCADE)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Completed', 'Completed'), ('Failed', 'Failed')], default='Pending')
     payment_date = models.DateTimeField(auto_now_add=True)

@@ -56,9 +56,9 @@
         data-task="Add New Department">Add New Department</button>
         <button id="Manage Departments" class="task-button bg-purple-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-purple-700 transform hover:-translate-y-1 transition"
         data-task="Manage Departments">Manage Departments</button>
-        <button class="task-button bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 transform hover:-translate-y-1 transition"
+        <button id="Add New Health Package" class="task-button bg-blue-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-blue-700 transform hover:-translate-y-1 transition"
           data-task="Add New Health Package">Add New Health Package</button>
-        <button class="task-button bg-yellow-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-yellow-700 transform hover:-translate-y-1 transition"
+        <button id="Manage Health Packages" class="task-button bg-yellow-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-yellow-700 transform hover:-translate-y-1 transition"
           data-task="Manage Health Packages">Manage Health Packages</button>
         <button class="task-button bg-indigo-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-indigo-700 transform hover:-translate-y-1 transition"
           data-task="Add Health Test Centre">Add Health Test Centre</button>
@@ -241,6 +241,35 @@
         `;
       }
 
+      else if(task == "Add New Health Package"){
+        formFields.innerHTML=`
+        <label>Package Name:</label>
+                    <input type="text" id="health-name" class="w-full p-2 border border-gray-300 rounded" placeholder="Package Name" required>
+                    <textarea id="health-description" class="w-full p-2 border border-gray-300 rounded" placeholder="Description"></textarea>
+                    <input type="number" id="health-price" class="w-full p-2 border border-gray-300 rounded" placeholder="Price" required>
+                    <input type="file" id="health-image" class="w-full p-2 border border-gray-300 rounded" accept="image/*" required>
+        `;
+
+      }
+
+      else if(task === "Manage Health Packages"){
+        formFields.innerHTML = `
+            <div class="overflow-x-auto">
+            <table class="w-full border border-gray-300">
+              <thead>
+                <tr class="bg-gray-200 text-left text-sm font-semibold text-gray-700">
+                  <th class="px-6 py-3 border-b">Package Name</th>
+                  <th class="px-6 py-3 border-b">Description</th>
+                  <th class="px-6 py-3 border-b">Price(Rs.)</th>
+                  <th class="px-6 py-3 border-b">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="health-packages-list"></tbody>
+            </table>
+          </div>
+        `;
+      }
+
 
     }
 
@@ -254,7 +283,16 @@
         await addDoctor();
       } else if (task === "Add New Department") {
         await addDepartment();
+      } else if(task === "Manage Users"){
+        await fetchUsers();
+      } else if(task === "Manage Departments"){
+        await fetchDepartments_manage();
+      }else if(task === "Add New Health Package"){
+        await addHealthPackage();
+      } else if(task === "Manage Health Packages"){
+        await fetchHealthPackages();
       }
+
       
       modal.classList.add("hidden");
     });
@@ -318,17 +356,6 @@
       formData.append("description", document.getElementById("dept-description").value.trim());
       formData.append("branch_id", document.getElementById("branch-id").value);
       formData.append("image", document.getElementById("dept-image").files[0]);
-    
-      //const response = await fetch("/api/add-department/", {
-       // method: "POST",
-      //  headers: {
-      //    "X-CSRFToken": getCSRFToken(),
-      //  },
-      //  body: formData,
-     // });
-    
-      //const data = await response.json();
-     // alert(data.message || "Department added successfully!");
 
      try {
       const response = await fetch("/api/add-department/", {
@@ -348,18 +375,36 @@
       alert("Failed to add department.");
   }
     }
-    
-    /*
-    async function fetchDepartments() {
-      const response = await fetch("/api/get-departments/");
-      const departments = await response.json();
-      const select = document.getElementById("doc-department");
-      select.innerHTML = `<option value="">Select Department</option>`;
-      departments.forEach(dept => {
-        select.innerHTML += `<option value="${dept.id}">${dept.name}</option>`;
-      });
-    }
-    */
+
+
+    async function addHealthPackage() {
+      const branchId = "{{ branch_code }}";
+      let formData = new FormData();
+      formData.append("name", document.getElementById("health-name").value);
+      formData.append("description", document.getElementById("health-description").value);
+      formData.append("price", document.getElementById("health-price").value);
+      formData.append("branch_id", branchId);
+      formData.append("image", document.getElementById("health-image").files[0]);
+  
+      try {
+          let response = await fetch("/api/add-health-package/", {
+              method: "POST",
+              body: formData,
+          });
+  
+          let data = await response.json();
+          if (response.ok) {
+              alert("Health Package added successfully!");
+              window.location.reload();
+          } else {
+              alert(data.error || "Failed to add health package.");
+          }
+      } catch (error) {
+          console.error("Error adding health package:", error);
+          alert("An unexpected error occurred.");
+      }
+  }
+
 
     async function fetchDepartments() {
       const departmentDropdown = document.getElementById("doc-department"); 
@@ -376,10 +421,16 @@
       try {
           const response = await fetch("/api/get-departments/");
           const data = await response.json();
+          const branchId = "{{ branch_code }}";
+          const filteredDepartments = data.departments.filter(
+            (departments) => departments.branch_id === branchId
+          );
+          console.log("Dropdown filtered:");
+          console.log(filteredDepartments);
   
           if (response.ok) {
               departmentDropdown.innerHTML = '<option value="">Select Department</option>';
-              data.departments.forEach(dept => {
+              filteredDepartments.forEach(dept => {
                   departmentDropdown.innerHTML += `<option value="${dept.name}">${dept.name}</option>`;
               });
           } else {
@@ -518,8 +569,6 @@ async function deleteDepartment(departmentId) {
   }
 }
 
-// Fetch departments on page load
-fetchDepartments_manage();
 
 
 
@@ -590,7 +639,6 @@ async function fetchUsers() {
   }
 }
 
-fetchUsers();
 
 
 
@@ -700,12 +748,119 @@ async function deleteDoctor(doctorId) {
 
 
 
+// ***************************** Add health packages ***************************
+
+
+document.querySelector("[data-task='Manage Health Packages']").addEventListener("click", () => {
+  document.getElementById("task-modal").classList.remove("hidden");
+  document.getElementById("modal-title").innerText = "Manage Health Packages";
+  fetchHealthPackages();
+});
+
+
+async function fetchHealthPackages() {
+  try {
+      let response = await fetch("/api/get-health-packages/");
+      let data = await response.json();
+      console.log(data);
+      const filteredPackages = data.packages.filter(
+        (packages) => packages.branch_id === "{{branch_code}}"
+      );
+      console.log("Filtered pacages:");
+      console.log(filteredPackages);
+
+      if (response.ok) {
+          let tableBody = document.getElementById("health-packages-list");
+          console.log(tableBody);
+          tableBody.innerHTML = "";
+
+          filteredPackages.forEach(pkg => {
+              let row = `<tr class="border">
+                  <td class="p-2">${pkg.name}</td>
+                  <td class="p-2">${pkg.description || "No description"}</td>
+                  <td class="p-2">Rs. ${pkg.price}</td>
+                  <td class="p-2">
+                      <button onclick="openEditHealthPackageModal('${pkg.id}', '${pkg.name}', '${pkg.description}', '${pkg.price}', '${pkg.branch_id}')" class="text-blue-600 hover:underline">Edit</button>
+                      <button onclick="deleteHealthPackage('${pkg.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
+                  </td>
+              </tr>`;
+              tableBody.innerHTML += row;
+          });
+      } else {
+          console.error("Error fetching health packages:", data.error);
+      }
+  } catch (error) {
+      console.error("Error fetching health packages:", error);
+  }
+}
 
 
 
+// Open Edit Health Package Modal
+async function openEditHealthPackageModal(packageId, name, description, price, branchId) {
+  document.getElementById("modal-title").innerText = "Edit Health Package";
+  document.getElementById("form-fields").innerHTML = `
+      <input type="hidden" id="edit-health-id" value="${packageId}">
+      <input type="text" id="edit-health-name" value="${name}" class="w-full p-2 border border-gray-300 rounded" placeholder="Package Name" required>
+      <textarea id="edit-health-description" class="w-full p-2 border border-gray-300 rounded" placeholder="Description">${description || ""}</textarea>
+      <input type="number" id="edit-health-price" value="${price}" class="w-full p-2 border border-gray-300 rounded" placeholder="Price" required>
+      <input type="file" id="edit-health-image" class="w-full p-2 border border-gray-300 rounded" accept="image/*">
+      <button onclick="editHealthPackage()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mt-4">Save</button>
+  `;
+
+  document.getElementById("task-modal").classList.remove("hidden");
+}
 
 
+// Handle Edit Health Package Submission
+async function editHealthPackage() {
+  let formData = new FormData();
+  formData.append("name", document.getElementById("edit-health-name").value);
+  formData.append("description", document.getElementById("edit-health-description").value);
+  formData.append("price", document.getElementById("edit-health-price").value);
+  formData.append("branch_id", "{{ branch_code }}");
+  let imageFile = document.getElementById("edit-health-image").files[0];
+  if (imageFile) formData.append("image", imageFile);
 
+  let packageId = document.getElementById("edit-health-id").value;
+
+  try {
+      let response = await fetch(`/api/edit-health-package/${packageId}/`, {
+          method: "POST",
+          body: formData,
+      });
+
+      let data = await response.json();
+      if (response.ok) {
+          alert("Health Package updated successfully!");
+          window.location.reload();
+      } else {
+          alert(data.error || "Failed to update health package.");
+      }
+  } catch (error) {
+      console.error("Error updating health package:", error);
+  }
+}
+
+
+// Delete Health Package
+async function deleteHealthPackage(packageId) {
+  if (!confirm("Are you sure you want to delete this health package?")) return;
+
+  try {
+      let response = await fetch(`/api/delete-health-package/${packageId}/`, { method: "DELETE" });
+      let data = await response.json();
+
+      if (response.ok) {
+          alert("Health Package deleted successfully!");
+          window.location.reload();
+      } else {
+          alert(data.error || "Failed to delete health package.");
+      }
+  } catch (error) {
+      console.error("Error deleting health package:", error);
+  }
+}
 
 
 

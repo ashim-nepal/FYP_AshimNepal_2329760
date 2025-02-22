@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -571,6 +571,105 @@ def delete_doctor(request, doctor_id):
 
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
+        
+        
+# Adding health packages
+@csrf_exempt
+def add_health_package(request):
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('name')
+            description = request.POST.get('description')
+            price = request.POST.get('price')
+            branch_id = request.POST.get('branch_id')
+            image = request.FILES.get('image')  # Handling the image file
+
+            # Validate required fields
+            if not name or not price or not branch_id:
+                return JsonResponse({'error': 'Name, Price, and Branch ID are required!'}, status=400)
+
+            
+                        # Ensure the branch exists
+            try:
+                branch = HospitalBranches.objects.get(branch_code=branch_id)
+            except HospitalBranches.DoesNotExist:
+                return JsonResponse({'error': 'Invalid branch ID'}, status=400)
+            
+            # Create Health Package
+            health_package = HealthPackages.objects.create(
+                name=name,
+                description=description,
+                price=price,
+                branch=branch,
+                image=image  # Save the image file
+            )
+
+            return JsonResponse({'message': 'Health Package added successfully!', 'package_id': health_package.id}, status=201)
+
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, status=500)
+
+    return JsonResponse({'error': 'Invalid request method'}, status=405)
+
+
+# Get All Health Packages
+def get_health_packages(request):
+    try:
+        packages = HealthPackages.objects.all().values("id", "name", "description", "price", "branch_id", "image")
+        return JsonResponse({"packages": list(packages)}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+# Edit Health Package
+@csrf_exempt
+def edit_health_package(request, package_id):
+    if request.method == "POST":
+        try:
+            package = HealthPackages.objects.get(id=package_id)
+            name = request.POST.get("name")
+            description = request.POST.get("description")
+            price = request.POST.get("price")
+            image = request.FILES.get("image")
+
+            # Validate input
+            if not name or not description or not price:
+                return JsonResponse({"error": "Name, Description and Price are required!"}, status=400)
+
+            # Update fields
+            package.name = name
+            package.description = description
+            package.price = price
+
+            # Update image if new image is uploaded
+            if image:
+                package.image = image
+
+            package.save()
+            return JsonResponse({"success": True, "message": "Health Package updated successfully!"}, status=200)
+
+        except HealthPackages.DoesNotExist:
+            return JsonResponse({"error": "Health Package not found."}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+# Delete Health Package
+@csrf_exempt
+def delete_health_package(request, package_id):
+    if request.method == "DELETE":
+        try:
+            package = HealthPackages.objects.get(id=package_id)
+            package.delete()
+            return JsonResponse({"success": True, "message": "Health Package deleted successfully!"}, status=200)
+        except HealthPackages.DoesNotExist:
+            return JsonResponse({"error": "Health Package not found."}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
 
 
 
@@ -661,11 +760,13 @@ def get_doctors_by_department(request, department_name, branch_id):
 
 # Get All Patients for Table Display
 def get_patients(request):
-    patients = Patients.objects.select_related("branch").all()
+    # patients = Patients.objects.select_related("branch").all()
+    patients = Patients.objects.all()
     data = []
     
     for patient in patients:
         #  Parse assigned_doctors JSON safely
+        print(patient.branch)
         try:
             assigned_doctors = json.loads(patient.assigned_doctors) if patient.assigned_doctors else []
         except json.JSONDecodeError:
@@ -677,6 +778,7 @@ def get_patients(request):
             "patient_no": patient.patient_no,
             "name": patient.name,
             "email":patient.email,
+            "branch_name": f"{patient.branch}",
             "age": patient.age,
             "gender": patient.gender,
             "address": patient.address,
