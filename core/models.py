@@ -228,6 +228,41 @@ class TestResults(models.Model):
         return f"{self.test.name} - {self.patient.user.name}"
 
 
+class TestCentre(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255)  # E.g., Blood Test, Urine Test, CT Scan
+    description = models.TextField(null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2)  # Cost of test
+    testcentre_pic = models.ImageField(upload_to='testcentre_pics/', null=True, blank=True)
+    branch = models.ForeignKey(HospitalBranches,to_field='branch_code', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.branch.name}"
+    
+
+class TestBooking(models.Model):
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Approved', 'Approved'),
+        ('Processing', 'Processing'),
+        ('Sample Collected', 'Sample Collected'),
+        ('Completed', 'Completed'),
+        ('Rejected', 'Rejected'),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    patient = models.ForeignKey('Patients',to_field='patient_no', on_delete=models.CASCADE, related_name="test_bookings")  # Linked Patient
+    test_department = models.ForeignKey(TestCentre, on_delete=models.CASCADE)  # Selected Test Department
+    booking_date = models.DateField()  # Date of booking
+    booking_time = models.TimeField()  # Selected Time Slot
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')  # Test Status
+    test_report = models.FileField(upload_to="test_reports/", null=True, blank=True)  # Test Report PDF
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.patient.name} - {self.test_department.name} ({self.status})"
+
 class Prescriptions(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     patient = models.ForeignKey(Patients, on_delete=models.CASCADE)

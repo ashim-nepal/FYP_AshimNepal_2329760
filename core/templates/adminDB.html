@@ -269,6 +269,16 @@
           </div>
         `;
       }
+      else if(task === "Add Health Test Centre"){
+        formFields.innerHTML = `
+        <input type="text" id="test-name" placeholder="Test Centre Name" class="w-full p-2 border border-gray-300 rounded" required>
+        <textarea id="test-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded"></textarea>
+        <input type="number" id="test-price" placeholder="Price" class="w-full p-2 border border-gray-300 rounded" required>
+        <input type="email" id="test-email" placeholder="Test Centre Email" class="w-full p-2 border border-gray-300 rounded" required>
+        <input type="password" id="test-password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
+        <input type="file" id="testcentre-image" class="w-full p-2 border border-gray-300 rounded" accept="image/*" required>
+        `;
+      }
 
 
     }
@@ -291,6 +301,8 @@
         await addHealthPackage();
       } else if(task === "Manage Health Packages"){
         await fetchHealthPackages();
+      } else if(task === "Add Health Test Centre"){
+        await addTestCentre();
       }
 
       
@@ -403,6 +415,35 @@
           console.error("Error adding health package:", error);
           alert("An unexpected error occurred.");
       }
+  }
+
+  async function addTestCentre(){
+    let formData = new FormData();
+    formData.append("name", document.getElementById("test-name").value);
+    formData.append("description", document.getElementById("test-description").value);
+    formData.append("price", document.getElementById("test-price").value);
+    formData.append("branch_code", "{{branch_code}}");
+    formData.append("email", document.getElementById("test-email").value);
+    formData.append("password", document.getElementById("test-password").value);
+    formData.append("image", document.getElementById("testcentre-image").files[0]);
+
+    try {
+        let response = await fetch("/api/create-test-centre/", {
+            method: "POST",
+            body: formData
+        });
+
+        let data = await response.json();
+        if (response.ok) {
+            alert("Test Centre Added Successfully!");
+            document.getElementById("task-modal").classList.add("hidden");
+            fetchTestCentres();
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        console.error("Error adding test centre:", error);
+    }
   }
 
 

@@ -41,6 +41,10 @@ urlpatterns = [
     path("api/get-health-packages/", views.get_health_packages, name="get_health_packages"),
     path("api/edit-health-package/<uuid:package_id>/", views.edit_health_package, name="edit_health_package"),
     path("api/delete-health-package/<uuid:package_id>/", views.delete_health_package, name="delete_health_package"),
+    path("api/create-test-centre/", views.create_test_centre, name="create_test_centre"),
+    # path("api/get-test-centres/", views.get_test_centres, name="get_test_centres"),
+    # path("api/edit-test-centre/<uuid:test_centre_id>/", views.edit_test_centre, name="edit_test_centre"),
+    # path("api/delete-test-centre/<uuid:test_centre_id>/", views.delete_test_centre, name="delete_test_centre"),
     #path for reception task
     path("api/get-doctors/<str:department_name>/<str:branch_id>/", views.get_doctors_by_department, name="get_doctors_by_department"),
     path('api/add-patient/', views.add_patient, name='add_patient'),

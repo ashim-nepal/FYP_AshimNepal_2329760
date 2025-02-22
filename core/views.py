@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -669,6 +669,60 @@ def delete_health_package(request, package_id):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+
+# Test Centre
+# Create Test Centre (Stores in TestCentre & Users)
+@csrf_exempt
+def create_test_centre(request):
+    if request.method == "POST":
+        try:
+            with transaction.atomic():
+                data = request.POST
+                name = data.get("name")
+                description = data.get("description")
+                price = data.get("price")
+                branch_code = data.get("branch_code")  # Branch Foreign Key
+                email = data.get("email")
+                password = data.get("password")
+                image = request.FILES.get('image')
+
+                # Validate required fields
+                if not all([name, description,branch_code, email, password, price, image]):
+                    return JsonResponse({"error": "All fields are required!"}, status=400)
+
+                # Check if branch exists
+                try:
+                    branch = HospitalBranches.objects.get(branch_code=branch_code)
+                except HospitalBranches.DoesNotExist:
+                    return JsonResponse({"error": "Invalid branch ID"}, status=400)
+
+                # Create User
+                user = Users.objects.create(
+                    name=name,
+                    email=email,
+                    password=make_password(password),
+                    role="TestCentre",
+                    branch=branch,
+                    is_active=True
+                )
+
+                # Create Test Centre
+                test_centre = TestCentre.objects.create(
+                    name=name,
+                    description=description,
+                    price=price,
+                    branch=branch,
+                    testcentre_pic=image
+                )
+
+                return JsonResponse({"success": True, "message": "Test Centre added successfully!"}, status=201)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 
