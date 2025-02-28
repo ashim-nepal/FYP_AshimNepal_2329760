@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Doctor's Profile | {{doctor.name}}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Optional: Styling for the scrollbar in the working time section */
+    ::-webkit-scrollbar {
+      height: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background-color: #29622E;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background-color: #f1f1f1;
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+
+  <section>
+    Nav here
+    <button onclick="confirmLogout()" class="text-green-700 font-semibold hover:underline">Logout</button>
+  </section>
+
+  <section class="p-6">
+    <header class="text-2xl text-[#29622E] font-bold text-center mb-8">
+      {{ branch_name }} | Dr. {{ doctor.name }}
+    </header>
+
+    <div class="flex flex-wrap lg:flex-nowrap gap-6">
+
+      <div class="flex flex-col items-center bg-white shadow-md p-6 rounded-lg w-full lg:w-1/3">
+
+        <div class="w-36 h-36 bg-gray-200 rounded-full mb-4"></div>
+        <p class="text-sm text-[#29622E] mb-4">NMC Registration No: {{ doctor.nmc_registration}}</p>
+
+
+
+        <div class="mt-6">
+          <p class="text-center mb-4 font-bold text-lg text-gray-700">My Rating⭐: {{doctor.rating}} / 10</p>
+        </div>
+
+
+        <div id="rating-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div class="bg-white hidden rounded-lg shadow-lg p-6 w-11/12 max-w-md">
+            <h2 class="text-lg font-bold text-[#29622E] mb-4">Rate the Doctor</h2>
+            <div class="flex items-center justify-between">
+            </div>
+            <div class="flex justify-end mt-6 space-x-4">
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="bg-white shadow-md p-6 rounded-lg w-full lg:w-2/3">
+        <p class="mb-4"><span class="font-bold">Name:</span> Dr. {{doctor.name}}</p>
+        <p class="mb-4"><span class="font-bold">Department:</span> {{doctor.department}}</p>
+        <p class="mb-4"><span class="font-bold">Expertise:</span> {{doctor.expertise}}</p>
+        <p class="mb-4"><span class="font-bold">Education:</span> {{doctor.education}}</p>
+        <p class="mb-4"><span class="font-bold">Hospitals Worked:</span> {{doctor.hospitals_worked}}</p>
+        <p class="mb-4"><span class="font-bold">Achievements:</span> {{doctor.achievements}}</p>
+        <p class="font-bold mb-2">Working Time:</p>
+
+  </section>
+
+  <section>
+    Footer here
+  </section>
+  <script>
+
+      // Confirm Logout
+  function confirmLogout() {
+    if (confirm("Are you sure you want to logout?")) {
+        window.location.href = "/logout/";
+    }
+}
+
+
+
+  </script>
+</body>
+</html>

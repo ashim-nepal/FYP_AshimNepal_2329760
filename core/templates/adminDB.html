@@ -62,7 +62,7 @@
           data-task="Manage Health Packages">Manage Health Packages</button>
         <button class="task-button bg-indigo-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-indigo-700 transform hover:-translate-y-1 transition"
           data-task="Add Health Test Centre">Add Health Test Centre</button>
-        <button class="task-button bg-orange-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-orange-700 transform hover:-translate-y-1 transition"
+        <button id="Manage Health Test Centre" class="task-button bg-orange-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-orange-700 transform hover:-translate-y-1 transition"
           data-task="Manage Health Test Centre">Manage Health Test Centre</button>
         <button class="task-button bg-red-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-700 transform hover:-translate-y-1 transition"
           data-task="Check Workflow Data">Check Workflow Data</button>
@@ -110,8 +110,6 @@
       </div>
   </div>
 </div>
-
-
 
   <script>
     // JavaScript for handling task buttons and modal
@@ -249,7 +247,6 @@
                     <input type="number" id="health-price" class="w-full p-2 border border-gray-300 rounded" placeholder="Price" required>
                     <input type="file" id="health-image" class="w-full p-2 border border-gray-300 rounded" accept="image/*" required>
         `;
-
       }
 
       else if(task === "Manage Health Packages"){
@@ -278,6 +275,22 @@
         <input type="password" id="test-password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
         <input type="file" id="testcentre-image" class="w-full p-2 border border-gray-300 rounded" accept="image/*" required>
         `;
+      } else if(task === "Manage Health Test Centre"){
+        formFields.innerHTML=`
+            <div class="overflow-x-auto">
+            <table class="w-full border border-gray-300">
+              <thead>
+                <tr class="bg-gray-200 text-left text-sm font-semibold text-gray-700">
+                  <th class="px-6 py-3 border-b">Centre Name</th>
+                  <th class="px-6 py-3 border-b">Description</th>
+                  <th class="px-6 py-3 border-b">Price(Rs.)</th>
+                  <th class="px-6 py-3 border-b">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="test-centre-list"></tbody>
+            </table>
+          </div>
+        `;
       }
 
 
@@ -303,9 +316,11 @@
         await fetchHealthPackages();
       } else if(task === "Add Health Test Centre"){
         await addTestCentre();
+      } else if(task === "Manage Health Test Centre"){
+        console.log("Clickable");
+        //await fetchTestCentres();
       }
 
-      
       modal.classList.add("hidden");
     });
 
@@ -481,6 +496,9 @@
           console.error("Error fetching departments:", error);
       }
   }
+
+
+
   document.getElementById("add-doctor-btn").addEventListener("click", fetchDepartments);
     
     function getCSRFToken() {
@@ -494,6 +512,53 @@
       }
       return "";
     }
+
+
+    document.getElementById("Manage Health Test Centre").addEventListener("click", () => {
+      document.getElementById("task-modal").classList.remove("hidden"); // Open modal
+      document.getElementById("modal-title").innerText = "Manage Health Test Centre";
+      fetchTestCentres();
+    });
+
+
+// Fetch & Display Test Centres
+async function fetchTestCentres(){
+  console.log("You clicked on fetchTestCentres function");
+  try {
+      let response = await fetch("/api/get-test-centres/");
+      let data = await response.json();
+      const filteredTest_centres = data.test_centres.filter(
+            (test_centres) => test_centres.branch_id === "{{ branch_code }}"
+          );
+          console.log("Dropdown filtered:");
+          console.log(filteredTest_centres);
+      if (response.ok) {
+          let tableBody = document.getElementById("test-centre-list");
+          console.log(tableBody);
+          tableBody.innerHTML = "";
+
+          filteredTest_centres.forEach(tc => {
+              let row = `<tr>
+                  <td>${tc.name}</td>
+                  <td>${tc.description || "Description unavailable"}</td>
+                  <td>Rs. ${tc.price}</td>
+                  <td>
+                      <button onclick="editTestCentre('${tc.id}')" class="text-blue-600 hover:underline">Edit</button>
+                      <button onclick="deleteTestCentre('${tc.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
+                  </td>
+              </tr>`;
+              tableBody.innerHTML += row;
+          });
+      } else {
+          console.error("Error fetching test centres:", data.error);
+      }
+  } catch (error) {
+      console.error("Error fetching test centres:", error);
+  }
+}
+
+
+
 
 
 
@@ -904,9 +969,77 @@ async function deleteHealthPackage(packageId) {
 }
 
 
+// Handle Editing Test Centre
+async function editTestCentre(id) {
+  let response = await fetch(`/api/get-test-centres/`);
+  let data = await response.json();
+  let testCentreData = data.test_centres.find(tc => tc.id === id);
+
+  if (testCentreData) {
+      openTestCentreModal("Edit Test Centre", testCentreData);
+      
+      document.getElementById("task-form").onsubmit = async (e) => {
+          e.preventDefault();
+
+          let updatedData = {
+              name: document.getElementById("test-name").value,
+              description: document.getElementById("test-description").value,
+              price: document.getElementById("test-price").value
+          };
+
+          let response = await fetch(`/api/edit-test-centre/${id}/`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(updatedData)
+          });
+
+          let result = await response.json();
+          if (response.ok) {
+              alert("Test Centre Updated Successfully!");
+              document.getElementById("task-modal").classList.add("hidden");
+              fetchTestCentres();
+          } else {
+              alert(result.error);
+          }
+      };
+  }
+}
 
 
+//Open Add/Edit Modal
+function openTestCentreModal(task, testCentreData = null) {
+  document.getElementById("modal-title").innerText = task;
 
+  let formFields = `
+      <input type="text" id="test-name" placeholder="Test Centre Name" class="w-full p-2 border border-gray-300 rounded" required>
+      <textarea id="test-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded"></textarea>
+      <input type="number" id="test-price" placeholder="Price (Rs.)" class="w-full p-2 border border-gray-300 rounded" required>
+  `;
+
+  document.getElementById("form-fields").innerHTML = formFields;
+  document.getElementById("task-modal").classList.remove("hidden");
+
+  if (testCentreData) {
+      document.getElementById("test-name").value = testCentreData.name;
+      document.getElementById("test-description").value = testCentreData.description;
+      document.getElementById("test-price").value = testCentreData.price;
+  }
+}
+
+
+//Handle Deleting Test Centre
+async function deleteTestCentre(id) {
+  if (confirm("Are you sure you want to delete this test centre?")) {
+      let response = await fetch(`/api/delete-test-centre/${id}/`, { method: "DELETE" });
+      let data = await response.json();
+      if (response.ok) {
+          alert("Deleted Successfully!");
+          fetchTestCentres();
+      } else {
+          alert(data.error);
+      }
+  }
+}
 
 
     closeModal.addEventListener("click", () => {

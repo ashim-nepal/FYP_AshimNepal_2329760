@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CT Scan Centre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 border-b-2 pb-2 border-black">
+        <h1 class="text-2xl font-bold text-green-700">CT Scan Centre</h1>
+        <a href="#" class="text-green-700 font-semibold">Logout</a>
+    </div>
+
+    <!-- Main Grid Container -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Left Section (Status + Completed Tests) -->
+        <div class="space-y-6">
+            <!-- Reservation Status -->
+            <div class="bg-white border border-black p-4 rounded-lg">
+                <h2 class="text-lg font-bold text-green-700 mb-4">Reservation Status</h2>
+                <div class="space-y-3">
+                    <!-- Dummy Data -->
+                    <div class="border p-3 rounded-lg">
+                        <p class="font-semibold text-green-700">28-11-2024, 13:30</p>
+                        <p>Patient Name | P. No: 123456</p>
+                        <select class="w-full border p-2 rounded mt-2">
+                            <option>Booked</option>
+                            <option>Sample Collected</option>
+                            <option>Processing Report</option>
+                            <option>Completed</option>
+                        </select>
+                    </div>
+                    <div class="border p-3 rounded-lg">
+                        <p class="font-semibold text-green-700">28-11-2024, 13:45</p>
+                        <p>Patient Name | P. No: 123457</p>
+                        <select class="w-full border p-2 rounded mt-2">
+                            <option>Booked</option>
+                            <option>Sample Collected</option>
+                            <option>Processing Report</option>
+                            <option>Completed</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tests Completed (Email Unsent) -->
+            <div class="bg-white border border-black p-4 rounded-lg">
+                <h2 class="text-lg font-bold text-green-700 mb-4">Tests Completed (Pending Email)</h2>
+                <div class="space-y-3">
+                    <div class="border p-3 rounded-lg cursor-pointer">
+                        <p class="font-semibold text-green-700">28-11-2024, 14:00</p>
+                        <p>Patient Name | P. No: 123458</p>
+                    </div>
+                    <div class="border p-3 rounded-lg cursor-pointer">
+                        <p class="font-semibold text-green-700">28-11-2024, 14:15</p>
+                        <p>Patient Name | P. No: 123459</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Section (File Upload) -->
+        <div class="bg-white border border-black p-4 rounded-lg">
+            <h2 class="text-lg font-bold text-green-700 mb-4">Upload Report</h2>
+            <div class="mb-4 border p-3 rounded-lg">
+                <p class="font-semibold text-green-700">Selected Patient:</p>
+                <p>Patient Name | P. No: -</p>
+            </div>
+            <div class="flex flex-col items-center border border-dashed p-6 rounded-lg">
+                <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" alt="File" class="w-16 h-16">
+                <input type="file" id="report-file" class="hidden">
+                <label for="report-file" class="cursor-pointer text-green-700 mt-2">Attach File</label>
+            </div>
+            <button class="bg-green-700 text-white px-4 py-2 rounded-lg shadow-md mt-4 w-full">Send</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", async function () {
+            // Fetch appointments dynamically
+            async function fetchAppointments() {
+                try {
+                    let response = await fetch("/api/get-appointments/");
+                    let data = await response.json();
+
+                    let appointmentList = document.getElementById("appointment-list");
+                    appointmentList.innerHTML = "";
+                    data.appointments.forEach(appointment => {
+                        let div = document.createElement("div");
+                        div.className = "border p-3 rounded-lg";
+                        div.innerHTML = `
+                            <p class="font-semibold text-green-700">${appointment.time}</p>
+                            <p>Patient Name | ID: ${appointment.patient_id}</p>
+                            <select class="w-full border p-2 rounded mt-2 status-dropdown" data-id="${appointment.id}">
+                                <option ${appointment.status === "Booked" ? "selected" : ""}>Booked</option>
+                                <option ${appointment.status === "Sample Collected" ? "selected" : ""}>Sample Collected</option>
+                                <option ${appointment.status === "Processing Report" ? "selected" : ""}>Processing Report</option>
+                                <option ${appointment.status === "Completed" ? "selected" : ""}>Completed</option>
+                            </select>
+                        `;
+                        appointmentList.appendChild(div);
+                    });
+
+                    // Update status on change
+                    document.querySelectorAll(".status-dropdown").forEach(select => {
+                        select.addEventListener("change", async function () {
+                            let appointmentId = this.getAttribute("data-id");
+                            let newStatus = this.value;
+
+                            await fetch("/api/update-status/", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ id: appointmentId, status: newStatus })
+                            });
+                        });
+                    });
+                } catch (error) {
+                    console.error("Error fetching appointments:", error);
+                }
+            }
+
+            // Fetch completed tests dynamically
+            async function fetchCompletedTests() {
+                try {
+                    let response = await fetch("/api/get-completed-tests/");
+                    let data = await response.json();
+
+                    let completedTestsDiv = document.getElementById("completed-tests");
+                    completedTestsDiv.innerHTML = "";
+                    data.completed_tests.forEach(test => {
+                        let div = document.createElement("div");
+                        div.className = "border p-3 rounded-lg cursor-pointer completed-test";
+                        div.setAttribute("data-id", test.id);
+                        div.innerHTML = `
+                            <p class="font-semibold text-green-700">${test.time}</p>
+                            <p>Patient Name | ID: ${test.patient_id}</p>
+                        `;
+                        completedTestsDiv.appendChild(div);
+                    });
+
+                    // On Click, Load Patient Data
+                    document.querySelectorAll(".completed-test").forEach(div => {
+                        div.addEventListener("click", function () {
+                            let patientInfo = document.getElementById("selected-patient");
+                            patientInfo.innerHTML = div.innerHTML;
+                        });
+                    });
+                } catch (error) {
+                    console.error("Error fetching completed tests:", error);
+                }
+            }
+
+            // Send Report
+            document.getElementById("send-report").addEventListener("click", async function () {
+                let fileInput = document.getElementById("report-file");
+                if (fileInput.files.length === 0) {
+                    alert("Please select a file.");
+                    return;
+                }
+
+                let formData = new FormData();
+                formData.append("report_file", fileInput.files[0]);
+
+                await fetch("/api/send-report/", {
+                    method: "POST",
+                    body: formData
+                });
+
+                alert("Report sent successfully!");
+            });
+
+            // Initial Fetch
+            await fetchAppointments();
+            await fetchCompletedTests();
+        });
+    </script>
+
+</body>
+</html>

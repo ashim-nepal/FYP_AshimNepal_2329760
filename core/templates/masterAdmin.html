@@ -72,6 +72,7 @@
       <button onclick="openAdminModal('Add Admin')"  id="add-admin-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700">
         Add Admin
       </button>
+      <button id="open-banner-modal" class="bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700">Manage Banner</button>
     </div>
 
     <!-- Records Section -->
@@ -137,74 +138,33 @@
     </div>
   </div>
 
+
+
+<!--Modal for Editing Banner -->
+<div id="banner-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white w-96 p-6 rounded-lg shadow-lg">
+      <h3 class="text-xl font-bold mb-4">Edit Banner</h3>
+
+      <!--Current Banner Preview -->
+      <div class="mb-4">
+          <label class="block text-sm font-medium text-gray-700">Current Banner</label>
+          <img id="banner-preview" src="" alt="Banner" class="w-full h-40 object-cover rounded-lg border border-gray-300 mt-2">
+      </div>
+
+      <!--Upload New Banner -->
+      <form id="update-banner-form">
+          <label class="block text-sm font-medium text-gray-700">Upload New Banner</label>
+          <input type="file" id="banner-file" accept="image/*" class="w-full p-2 border border-gray-300 rounded mt-2" required>
+
+          <div class="flex justify-end space-x-4 mt-6">
+              <button type="button" id="close-modal-banner" class="bg-gray-300 hover:bg-gray-400 px-4 py-2 rounded">Cancel</button>
+              <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Save</button>
+          </div>
+      </form>
+  </div>
+</div>
+
   <script>
-
-    
-    {% comment %} const modal = document.getElementById("task-modal");
-    const formFields = document.getElementById("form-fields");
-    const modalTitle = document.getElementById("modal-title");
-    const closeModal = document.getElementById("close-modal");
-    const messageContainer = document.getElementById("message-container");
-    const errorMessage = document.getElementById("error-message");
-    const successMessage = document.getElementById("success-message");
-
-    // Open modal for adding or editing
-    function openModal(task, data = null) {
-      modal.classList.remove("hidden");
-      modal.classList.add("flex");
-      modalTitle.innerText = task;
-
-      // Populate form fields for hospitals
-      if (task === "Add Hospital" || task === "Edit Hospital") {
-        formFields.innerHTML = `
-          <input type="text" id="hospital-name" class="w-full p-2 border border-gray-300 rounded" placeholder="Hospital Name" value="${data?.name || ""}" required>
-          <input type="text" id="hospital-location" class="w-full p-2 border border-gray-300 rounded" placeholder="Location" value="${data?.location || ""}" required>
-          <input type="text" id="hospital-code" class="w-full p-2 border border-gray-300 rounded" placeholder="Hospital Code" value="${data?.code || ""}" required>
-        `;
-      } else if (task === "Add Admin" || task === "Edit Admin") {
-        formFields.innerHTML = `
-          <input type="text" id="admin-name" class="w-full p-2 border border-gray-300 rounded" placeholder="Admin Name" value="${data?.name || ""}" required>
-          <input type="email" id="admin-email" class="w-full p-2 border border-gray-300 rounded" placeholder="Email" value="${data?.email || ""}" required>
-          <input type="password" id="admin-password" class="w-full p-2 border border-gray-300 rounded" placeholder="Password" value="${data?.password || ""}" required>
-          <select id="admin-hospital" class="w-full p-2 border border-gray-300 rounded" required>
-            <option value="" disabled ${!data ? "selected" : ""}>Select Hospital</option>
-            <!-- Options dynamically populated -->
-          </select>
-        `;
-      }
-    }
-
-    // Close modal
-    closeModal.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    });
-
-    // Add event listeners to action buttons
-    document.getElementById("add-hospital-btn").addEventListener("click", () => {
-      openModal("Add Hospital");
-    });
-
-    document.getElementById("add-admin-btn").addEventListener("click", () => {
-      openModal("Add Admin");
-    });
-
-    // Handle form submission
-    document.getElementById("task-form").addEventListener("submit", (event) => {
-      event.preventDefault();
-      successMessage.innerText = "Submitted successfully!";
-      messageContainer.classList.remove("hidden");
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    });
-
-    function confirmLogout() {
-      const confirmAction = confirm("Are you sure you want to logout?");
-      if (confirmAction) {
-        window.location.href = "/logout/";
-      }
-    }
-     {% endcomment %}
 
     // Fetch hospital branches and populate the table
     async function fetchHospitalBranches() {
@@ -364,6 +324,63 @@
       }
   }
 
+
+  // Open model for banners
+  document.getElementById("open-banner-modal").addEventListener("click", async () => {
+    try {
+        let response = await fetch("/api/get-banner/");
+        let data = await response.json();
+        if (response.ok) {
+            document.getElementById("banner-preview").src = data.banner_file;
+            document.getElementById("banner-modal").classList.remove("hidden");
+        } else {
+            alert(data.error || "Failed to fetch banner.");
+        }
+    } catch (error) {
+        console.error("Error fetching banner:", error);
+    }
+});
+
+// Close Modal
+document.getElementById("close-modal-banner").addEventListener("click", () => {
+    document.getElementById("banner-modal").classList.add("hidden");
+});
+
+
+  // Handle Banner Update
+  document.getElementById("update-banner-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    let formData = new FormData();
+    let fileInput = document.getElementById("banner-file");
+
+    if (fileInput.files.length === 0) {
+        alert("Please select a banner image.");
+        return;
+    }
+
+    formData.append("banner_file", fileInput.files[0]);
+
+    try {
+        let response = await fetch("/api/update-banner/", {
+            method: "POST",
+            body: formData
+        });
+
+        let data = await response.json();
+        if (response.ok) {
+            alert("Banner Updated Successfully!");
+            document.getElementById("banner-preview").src = data.banner_file;
+            document.getElementById("banner-modal").classList.add("hidden");
+        } else {
+            alert(data.error);
+        }
+    } catch (error) {
+        console.error("Error updating banner:", error);
+    }
+});
+
+
+
   // Confirm Logout
   function confirmLogout() {
       if (confirm("Are you sure you want to logout?")) {
@@ -376,6 +393,9 @@
       fetchHospitalBranches();
       fetchAdmins();
   });
+
+
+
 
   </script>
 </body>

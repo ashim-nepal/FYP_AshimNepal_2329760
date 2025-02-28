@@ -231,6 +231,7 @@ class TestResults(models.Model):
 class TestCentre(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)  # E.g., Blood Test, Urine Test, CT Scan
+    email = models.EmailField(unique=True, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2)  # Cost of test
     testcentre_pic = models.ImageField(upload_to='testcentre_pics/', null=True, blank=True)

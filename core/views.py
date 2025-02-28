@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -18,6 +18,7 @@ from django.utils.dateparse import parse_date
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.html import strip_tags
+from django.core.files.base import ContentFile
 
 
 # Create your views here.
@@ -55,6 +56,39 @@ def patientProfile(request):
         patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
         print(patient_val.assigned_doctors_data)
     return render(request,"patientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val})
+
+
+def doctorProfilePage(request):
+    if not request.session.get('is_authenticated'):
+        return redirect('/login/')
+    
+    if request.session.get('user_role') != 'doctor':
+        return redirect('/login/')  # Prevent unauthorized access
+    
+    
+    
+    user_email = request.session.get('user_email')
+    print(user_email)
+    
+    #Get admin details from session
+    doctor_id = request.session.get('user_id')
+    patient = Users.objects.get(id=doctor_id)
+
+    # Get hospital name based on admin's branch_id
+    hospital_name = "Unknown Hospital"
+    if patient.branch:
+        branch = HospitalBranches.objects.get(branch_code=patient.branch.branch_code)
+        hospital_name = branch.branch_name  # Fetch the hospital name
+        hospital_branch = branch.branch_code
+        try:
+            doctor_val = Doctors.objects.get(email=user_email)
+        except Patients.DoesNotExist:
+            doctor_val = None
+        
+    return render(request,"myProfileDoctor.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'doctor': doctor_val})
+    
+def testCentreDB(request):
+    return render(request, 'testCentreDB.html')    
 
 def adminDB(request):
     if not request.session.get('is_authenticated'):
@@ -140,7 +174,7 @@ def login_api(request):
 
                 role_redirects = {
                     'masteradmin': '/masterAdminDB/',
-                    'doctor': '/doctorDB/',
+                    'doctor': '/myProfile-Doctor/',
                     'admin': '/adminDB/',
                     'patient': '/patientProfile/',
                     'reception': '/receptionDB/',
@@ -297,6 +331,44 @@ def delete_admin(request, admin_id):
             return JsonResponse({"error": "Admin not found"}, status=404)
 
 
+
+# Fetch the existing banner
+def get_banner(request):
+    try:
+        banner = Banners.objects.first()  # Assuming only one record exists
+        if banner:
+            return JsonResponse({"id": str(banner.id), "banner_file": banner.banner_file.url})
+        return JsonResponse({"error": "No banner found."}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
+
+# Update the banner image
+@csrf_exempt
+def update_banner(request):
+    if request.method == 'POST':
+        try:
+            banner = Banners.objects.first()  # Fetch the only banner
+            if not banner:
+                return JsonResponse({"error": "No banner found to update."}, status=404)
+
+            if 'banner_file' in request.FILES:
+                # Delete old file
+                if banner.banner_file:
+                    banner.banner_file.delete()
+
+                # Save new file
+                banner.banner_file.save(request.FILES['banner_file'].name, ContentFile(request.FILES['banner_file'].read()))
+                banner.save()
+
+                return JsonResponse({"success": True, "message": "Banner updated successfully!", "banner_file": banner.banner_file.url})
+
+            return JsonResponse({"error": "No file uploaded."}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
 # Admin Dashboard Features
@@ -711,6 +783,7 @@ def create_test_centre(request):
                 # Create Test Centre
                 test_centre = TestCentre.objects.create(
                     name=name,
+                    email=email,
                     description=description,
                     price=price,
                     branch=branch,
@@ -725,8 +798,62 @@ def create_test_centre(request):
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
+# Get All Test Centres
+def get_test_centres(request):
+    try:
+        test_centres = TestCentre.objects.all().values('id', 'name', 'description', 'price', 'branch_id')
+        return JsonResponse({"test_centres": list(test_centres)}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
+
+# Edit Test Centre
+@csrf_exempt
+def edit_test_centre(request, test_centre_id):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            name = data.get("name")
+            description = data.get("description")
+            price = data.get("price")
+
+            # Get Test Centre
+            test_centre = TestCentre.objects.get(id=test_centre_id)
+            if name:
+                test_centre.name = name
+            if description:
+                test_centre.description = description
+            if price:
+                test_centre.price = price
+
+            test_centre.save()
+            return JsonResponse({"success": True, "message": "Test Centre updated successfully!"}, status=200)
+
+        except TestCentre.DoesNotExist:
+            return JsonResponse({"error": "Test Centre not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+# Delete Test Centre (Deletes from Users & TestCentre)
+@csrf_exempt
+def delete_test_centre(request, test_centre_id):
+    if request.method == "DELETE":
+        try:
+            test_centre = TestCentre.objects.get(id=test_centre_id)
+
+            test_centre.delete()
+            return JsonResponse({"success": True, "message": "Test Centre deleted successfully!"}, status=200)
+
+        except TestCentre.DoesNotExist:
+            return JsonResponse({"error": "Test Centre not found"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 
