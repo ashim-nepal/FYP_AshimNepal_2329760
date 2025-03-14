@@ -131,7 +131,8 @@ class Doctors(models.Model):
     education = models.TextField(default="No Education added")  # Education Details
     hospitals_worked = models.TextField(default="syncHealth")  # List of Hospitals Previously Worked
     achievements = models.TextField(default="No achievements added")  # Achievements 
-    rating = models.FloatField(default=0.0)  # Rating (Updated from Reviews)
+    rating = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)  # Rating (Updated from Reviews)
+    rating_counts = models.IntegerField(default=0)
     branch = models.ForeignKey(HospitalBranches, to_field='branch_code', on_delete=models.CASCADE)  # Branch ForeignKey (Using branch_code)
 
     def calculate_rating(self):
@@ -161,6 +162,7 @@ class DoctorAvailability(models.Model):
     break_start = models.TimeField(null=True, blank=True)
     break_end = models.TimeField(null=True, blank=True)
     is_locked = models.BooleanField(default=False)
+    emergency_available = models.BooleanField(default=False)
     
     def save(self, *args, **kwargs):
         # Auto-assigns timings based on selected working type.
@@ -179,20 +181,19 @@ class DoctorAvailability(models.Model):
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.doctor.user.name} - {self.date} ({self.working_day_type})"
+        return f"{self.doctor} - {self.date} ({self.working_day_type})"
 
 
 class Appointments(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    patient = models.ForeignKey(Patients,to_field='email', on_delete=models.CASCADE)
-    doctor = models.ForeignKey(DoctorAvailability, on_delete=models.CASCADE)
-    branch = models.ForeignKey(HospitalBranches,to_field='branch_code', on_delete=models.CASCADE)
+    patient = models.CharField(max_length=100, default="Patient's Email")
+    doctor = models.CharField(max_length=100, default="Doctor's Email")
+    branch = models.CharField(max_length=20, default="")
     appointment_date = models.DateField()
     appointment_time = models.TimeField()
-    start_time = models.TimeField(null=True)
-    end_time = models.TimeField(null=True)
     is_booked = models.BooleanField(default=False)  # If a patient has booked this slot
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected'), ('Completed', 'Completed')], default='Pending')
+    is_emergency = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -302,14 +303,14 @@ class Prescriptions(models.Model):
 
 class Reviews(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    doctor = models.ForeignKey(Doctors, on_delete=models.CASCADE)
-    patient = models.ForeignKey(Patients, on_delete=models.CASCADE)
+    doctor = models.CharField(max_length=100, null=True)
+    patient = models.ForeignKey(Patients,to_field="email", on_delete=models.CASCADE)
     rating = models.IntegerField()
     review = models.TextField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.patient.user.name} -> {self.doctor.user.name}"
+        return f"{self.patient} -> {self.doctor}"
 
 
 class Banners(models.Model):

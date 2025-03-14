@@ -119,6 +119,7 @@
   
               let isLocked = day.is_locked ? "disabled" : "";
               let selectedOption = day.working_day_type || "None"; // Handle new entries
+              let emergencyChecked = day.emergency_available ? "checked" : "";
   
               let row = `
                   <div class="flex justify-between items-center mb-4 p-3 border border-gray-300 rounded">
@@ -130,6 +131,10 @@
                           <option value="Half_Evening" ${selectedOption === "Half_Evening" ? "selected" : ""}>Half Day - Evening</option>
                           <option value="Leave" ${selectedOption === "Leave" ? "selected" : ""}>Leave</option>
                       </select>
+                      <label class="flex items-center space-x-2">
+                        <input type="checkbox" data-date="${day.date}" class="emergency-checkbox" ${emergencyChecked} ${isLocked}>
+                        <span>Emergency Available</span>
+                    </label>
                   </div>`;
               scheduleContainer.innerHTML += row;
           }
@@ -141,13 +146,15 @@
   
       saveButton.addEventListener("click", async function () {
           let selects = document.querySelectorAll(".schedule-select");
+          let checkboxes = document.querySelectorAll(".emergency-checkbox");
           let scheduleData = [];
   
-          selects.forEach((select) => {
+          selects.forEach((select, index) => {
               let selectedValue = select.value !== "None" ? select.value : null;
               scheduleData.push({
                   date: select.getAttribute("data-date"),
                   working_day_type: selectedValue,
+                  emergency_available: checkboxes[index].checked,
               });
           });
   

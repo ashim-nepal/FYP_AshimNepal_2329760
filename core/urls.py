@@ -10,7 +10,7 @@ urlpatterns = [
     path('login/',views.login_view, name='loginPage'),
     path('api/login/', views.login_api, name='login_api'),
     path('logout/',views.logout_view, name='logout'),
-    path('docProfile/', views.docProfile, name="docProfile"),
+    path('docProfile/<str:doctor_email>/', views.doc_profile, name="doc_profile"),
     path('patientProfile/', views.patientProfile, name='patientProfile'),
     path('adminDB/', views.adminDB, name='adminDB'),
     path('masterAdminDB/', views.masterAdmin, name='masterAdminDB'),
@@ -58,6 +58,11 @@ urlpatterns = [
     # Doctor time availibality management
     path('api/get-doctor-schedule/<str:doctor_email>/', views.get_doctor_schedule, name="get-doctor-schedule"),
     path('api/update-doctor-schedule/<str:doctor_email>/', views.update_doctor_schedule, name = "update_doctor_schedule"),
+    # Doctor schedules and appointment bookings
+    path("api/get-weekly-slots/<str:doctor_email>/", views.get_doctor_availability, name="get_weekly_slots"),
+    path("api/book-appointment/", views.book_appointment, name="book_appointment"),
+    # Review doctor
+    path("api/submit-review/<str:doctor_email>/", views.submit_review, name="submit_review"),
     
     
     # path('create-user/', create_user_view, name='create-user')

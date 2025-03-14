@@ -27,7 +27,7 @@
 
   <section class="p-6">
     <header class="text-2xl text-[#29622E] font-bold text-center mb-8">
-      Doctor's Profile | Dr. Doctor Name
+    {{hospital}} | Dr. {{doc.name}} Details
     </header>
 
     <div class="flex flex-wrap lg:flex-nowrap gap-6">
@@ -35,17 +35,20 @@
       <div class="flex flex-col items-center bg-white shadow-md p-6 rounded-lg w-full lg:w-1/3">
 
         <div class="w-36 h-36 bg-gray-200 rounded-full mb-4"></div>
-        <p class="text-sm text-[#29622E] mb-4">NMC Registration No: 213</p>
+        <p class="text-sm text-[#29622E] mb-4">Doctor Rating: ⭐{{ doc.rating }} / 10 (out of {{doc.rating_counts}} ratings)</p>
+        <p class="text-sm text-[#29622E] mb-4">NMC Registration No: {{ doc.nmc_registration }}</p>
         <button class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
           Book an Online Appointment
         </button>
 
 
         <div class="mt-6">
-          <p class="text-center mb-4 font-bold text-lg text-gray-700">Give Rating: ⭐ / 10</p>
-          <button id="rate-btn" class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
-            Give Rating
-          </button>
+          <p class="text-center mb-4 font-bold text-lg text-gray-700">Give Rating ⭐: <span id="rating-stars" class="inline-block">
+            {% for i in "x"|ljust:10 %}
+                <span class="star text-gray-300 text-2xl cursor-pointer" data-value="{{ forloop.counter }}">★</span>
+            {% endfor %}
+        </span></p>
+
         </div>
 
 
@@ -70,12 +73,13 @@
 
 
       <div class="bg-white shadow-md p-6 rounded-lg w-full lg:w-2/3">
-        <p class="mb-4"><span class="font-bold">Name:</span> Doctor Name</p>
-        <p class="mb-4"><span class="font-bold">Department:</span> Ophthalmology</p>
-        <p class="mb-4"><span class="font-bold">Expertise:</span> Long term worked in the field of ophthalmology and renowned ophthalmologist of the town</p>
-        <p class="mb-4"><span class="font-bold">Education:</span> Completed MBBS and MSc. in 2002</p>
-        <p class="mb-4"><span class="font-bold">Hospitals Worked:</span> Grande, Medicare, Teaching, Tilganga eye centre</p>
-        <p class="mb-4"><span class="font-bold">Achievements:</span> Award of the notable doctor</p>
+        <p class="mb-4"><span class="font-bold">Name:</span> {{doc.name}}</p>
+        <p class="mb-4"><span class="font-bold">Email:</span> <a href="mailto:{{doc.email}}">{{doc.email}}</a></p>
+        <p class="mb-4"><span class="font-bold">Department:</span> {{doc.department}}</p>
+        <p class="mb-4"><span class="font-bold">Expertise:</span> {{doc.expertise}}</p>
+        <p class="mb-4"><span class="font-bold">Education:</span> {{doc.education}}</p>
+        <p class="mb-4"><span class="font-bold">Hospitals Worked:</span> {{doc.hospitals_worked }}</p>
+        <p class="mb-4"><span class="font-bold">Achievements:</span> {{doc.achievements}}</p>
         <p class="font-bold mb-2">Working Time:</p>
 
         <div class="overflow-x-auto">
@@ -83,11 +87,11 @@
             <thead class="bg-gray-100">
               <tr class="text-[#29622E]">
                 <th class="border px-4 py-2 text-left">Date</th>
-                <th class="border px-4 py-2 text-left">Dr. Available Time</th>
-                <th class="border px-4 py-2 text-left">Available Time</th>
+                <th class="border px-4 py-2 text-left">Doctor Available Time</th>
               </tr>
             </thead>
-            <tbody>
+            <tbody id="appointments-table"></tbody>
+              <!-- 
               <tr>
                 <td class="border px-4 py-2">2024/12/22 [208/09/07]</td>
                 <td class="border px-4 py-2">19:00 - 19:48</td>
@@ -98,7 +102,9 @@
                   <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:24">19:24</button>
                 </td>
               </tr>
-            </tbody>
+              -->
+
+            
           </table>
         </div>
 
@@ -115,58 +121,146 @@
   </section>
 
   <script>
-    const rateBtn = document.getElementById("rate-btn");
-const ratingModal = document.getElementById("rating-modal");
-const closeModal = document.getElementById("close-modal");
-const submitRating = document.getElementById("submit-rating");
-const ratingInput = document.getElementById("rating-input");
 
-rateBtn.addEventListener("click", () => {
-  ratingModal.classList.remove("hidden");
-});
+    document.addEventListener('DOMContentLoaded', () => {
+      const stars = document.querySelectorAll('#rating-stars .star');
+      let selectedRating = 0;
+    
+      // Function to highlight stars up to the selected or hovered value
+      function highlightStars(value) {
+        stars.forEach(star => {
+          star.classList.toggle('text-yellow-400', star.dataset.value <= value);
+          star.classList.toggle('text-gray-300', star.dataset.value > value);
+        });
+      }
+    
+      // Add event listeners to each star
+      stars.forEach(star => {
+        // Highlight stars on hover
+        star.addEventListener('mouseover', () => {
+          const value = parseInt(star.dataset.value);
+          highlightStars(value);
+        });
+    
+        // Reset to selected rating on mouseout
+        star.addEventListener('mouseout', () => {
+          highlightStars(selectedRating);
+        });
 
-closeModal.addEventListener("click", () => {
-  ratingModal.classList.add("hidden");
-});
-
-ratingInput.addEventListener("input", () => {
-  ratingInput.value = ratingInput.value.replace(/[^0-9]/g, "");
-
-  if (ratingInput.value > 10) {
-    ratingInput.value = 10;
-  }
-});
-
-submitRating.addEventListener("click", () => {
-  const rating = parseInt(ratingInput.value, 10);
-
-  if (rating >= 0 && rating <= 10 && !isNaN(rating)) {
-    alert(`Thank you for rating the doctor: ${rating}/10`);
-    ratingModal.classList.add("hidden");
-    ratingInput.value = ""; // Clear the input field
-  } else {
-    alert("Please enter a valid rating between 0 and 10.");
-  }
-});
-
-const timeButtons = document.querySelectorAll(".time-btn");
-const appointmentButton = document.getElementById("appointment-btn");
-
-timeButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    timeButtons.forEach((btn) => {
-      btn.classList.remove("bg-[#29622E]", "text-white");
-      btn.classList.add("bg-gray-200", "text-gray-700");
+        let logged_in = "{{logged_in}}";
+    
+        // Show alert with rating on click
+        star.addEventListener('click', async () => {
+          const value = parseInt(star.dataset.value);
+          const confirmMessage = `Are you sure you want to rate this value to doctor?`;
+          
+          if (logged_in == "True"){
+            if (confirm(confirmMessage)) {
+              selectedRating = value;
+              let reviewData = {
+                patient_email: "{{patients.email}}",
+                doctor_email: "{{doc.email}}",
+                rating: selectedRating,
+              };
+              let doc_email = "{{doc.email}}";
+              let response = await fetch(`/api/submit-review/${doc_email}/`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+                body: JSON.stringify(reviewData),
+            });
+    
+            let result = await response.json();
+            console.log(result.error);
+    
+            if (response.ok) {
+              location.reload();
+              alert(`You rated ${selectedRating} rating!`);
+            }
+              
+            }
+            highlightStars(selectedRating);
+          }
+          else{
+            alert("{{msg}}");
+          }
+        });
+        function getCSRFToken() {
+          return document.cookie.split("; ").find(row => row.startsWith("csrftoken="))?.split("=")[1];
+      }
+      });
     });
 
-    button.classList.remove("bg-gray-200", "text-gray-700");
-    button.classList.add("bg-[#29622E]", "text-white");
 
-    appointmentButton.disabled = false;
-    appointmentButton.classList.remove("bg-gray-300", "cursor-not-allowed");
-    appointmentButton.classList.add("bg-[#29622E]", "hover:bg-[#35993E]");
+document.addEventListener("DOMContentLoaded", function () {
+  const doctorEmail = "{{doc.email}}"; 
+  const appointmentButton = document.getElementById("appointment-btn");
+  const tableBody = document.getElementById("appointments-table");
+  let selectedDate = null;
+  let selectedTime = null;
+
+  async function fetchWeeklySlots() {
+      let response = await fetch(`/api/get-weekly-slots/${doctorEmail}/`);
+      let data = await response.json();
+      console.log(data);
+      tableBody.innerHTML = ""; 
+
+      data.forEach((day, index) => {
+          let row = document.createElement("tr");
+          row.innerHTML = `
+              <td class="border px-4 py-2">${day.date} - ${day.day}</td>
+              <td class="border px-4 py-2 space-x-2">
+                  ${day.available_time.map(time => `<button class="time-btn px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-date="${day.date}" data-time="${time}">${time}</button>`).join(" ")}
+              </td>
+          `;
+          tableBody.appendChild(row);
+      });
+
+      document.querySelectorAll(".time-btn").forEach(button => {
+          button.addEventListener("click", () => {
+              document.querySelectorAll(".time-btn").forEach(btn => {
+                  btn.classList.remove("bg-[#29622E]", "text-white");
+                  btn.classList.add("bg-gray-200", "text-gray-700");
+              });
+
+              button.classList.remove("bg-gray-200", "text-gray-700");
+              button.classList.add("bg-[#29622E]", "text-white");
+              selectedDate = button.dataset.date;
+              selectedTime = button.dataset.time;
+
+              appointmentButton.disabled = false;
+              appointmentButton.classList.remove("bg-gray-300", "cursor-not-allowed");
+              appointmentButton.classList.add("bg-[#29622E]", "hover:bg-[#35993E]");
+          });
+      });
+  }
+
+  appointmentButton.addEventListener("click", async function () {
+      if (!selectedDate || !selectedTime) return;
+      const logged_in = "{{logged_in}}";
+      if (logged_in == "True"){
+
+        let response = await fetch("/api/book-appointment/", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+            body: JSON.stringify({ doctor_email: doctorEmail, appointment_date: selectedDate, appointment_time: selectedTime })
+        });
+
+        let result = await response.json();
+        console.log(result);
+        if (response.ok) alert(result.message);
+        else alert("Error Booking, " + result.error);
+      } else{
+        alert("{{msg}}");
+      }
   });
+
+  function getCSRFToken() {
+      return document.cookie.split("; ").find(row => row.startsWith("csrftoken="))?.split("=")[1];
+  }
+
+  fetchWeeklySlots();
 });
+
   </script>
 </body>
 </html>

@@ -1,12 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews
 from rest_framework.views import APIView
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from django.db import transaction
 import json, uuid, datetime
-from datetime import datetime, timedelta
-from .serializers import HospitalBranchSerializer, UserSerializer
+from datetime import datetime, timedelta, date
+from .serializers import HospitalBranchSerializer, UserSerializer, DoctorAvailabilitySerializer, AppointmentSerializer
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.hashers import check_password, make_password
 from django.contrib.auth import login
@@ -15,10 +15,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Avg, Count
 from django.utils.dateparse import parse_date
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils.html import strip_tags
+from django.utils.dateparse import parse_time
 from django.core.files.base import ContentFile
 
 
@@ -26,8 +28,6 @@ from django.core.files.base import ContentFile
 def home(request):
     return render(request, "home.html")
 
-def docProfile(request):
-    return render(request, "docProfile.html")
 
 def patientProfile(request):
     if not request.session.get('is_authenticated'):
@@ -1068,6 +1068,11 @@ def get_doctor_schedule(request, doctor_email):
         if is_locked:
             record.is_locked = True
             record.save()
+        
+        has_emergency = Appointments.objects.filter(doctor=record, status="Approved", is_emergency=True).exists()
+        if has_emergency:
+            record.is_locked = True  # Lock if emergency is booked
+            record.save()
 
         schedule.append({
             "date": record.date.strftime("%Y-%m-%d"),
@@ -1078,6 +1083,7 @@ def get_doctor_schedule(request, doctor_email):
             "break_start": record.break_start.strftime("%H:%M") if record.break_start else None,
             "break_end": record.break_end.strftime("%H:%M") if record.break_end else None,
             "is_locked": record.is_locked,
+            "emergency_available": record.emergency_available,
         })
 
     return JsonResponse({"schedule": schedule}, status=200)
@@ -1096,10 +1102,190 @@ def update_doctor_schedule(request, doctor_email):
                 continue  # Cannot modify locked days
 
             availability.working_day_type = entry["working_day_type"]
+            availability.emergency_available = entry["emergency_available"]
             availability.save()  # Auto-assigns times based on type
 
         return JsonResponse({"message": "Schedule updated successfully!"}, status=200)
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+def doc_profile(request, doctor_email):
+    if not request.session.get("is_authenticated"):
+        logged_in = False
+        msg = "You are not logged in!"
+    
+    if request.session.get('user_role')!='patient':
+        logged_in = False
+        msg = "You are not logged in as Patient!"
+    else:
+        logged_in = True
+        msg = "You are logged in as patient!"
+    
+    user_email = request.session.get('user_email')
+    try:
+        patient_id = request.session.get('user_id')
+        patient = Users.objects.get(id=patient_id)
+    except:
+        patient_id = None
+        patient = None
+    
+    hospital_name = "Unknown Hospital"
+    try:
+        if patient.branch:
+            branch = HospitalBranches.objects.get(branch_code=patient.branch.branch_code)
+            hospital_name = branch.branch_name # Fetch the hospital name
+            hospital_branch = branch.branch_code
+    except:
+        hospital_branch = None
+    try:
+        patient_val = Patients.objects.get(email=user_email)
+    except Patients.DoesNotExist:
+        patient_val = None
+        
+        
+        
+    doctor = get_object_or_404(Doctors, email=doctor_email)
+    hospital_name = get_object_or_404(HospitalBranches, branch_code=doctor.branch_id)
+    return render(request, 'docProfile.html',{'doc': doctor, 'hospital': hospital_name, "logged_in": logged_in, "msg":msg, 'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val})
+
+
+
+def generate_time_slots(start_time, end_time, break_start, break_end, interval=20):
+    if start_time is None or end_time is None:
+        return [] 
+    slots = []
+    current_time = start_time
+
+    while current_time < end_time:
+        if break_start and break_end and break_start <= current_time < break_end:
+            current_time = (datetime.combine(datetime.today(), current_time) + timedelta(minutes=interval)).time()
+            continue  # Skip break time
+
+        slots.append(current_time.strftime("%H:%M"))
+        current_time = (datetime.combine(datetime.today(), current_time) + timedelta(minutes=interval)).time()
+
+    return slots
+
+
+def get_doctor_availability(request, doctor_email):
+    """ Fetches 7-day availability with generated time slots """
+    doctor = get_object_or_404(Doctors, email=doctor_email)
+    print()
+    today = date.today()
+    
+    # FIX: Use `filter()` instead of `get()` to handle multiple objects
+    availability_records = DoctorAvailability.objects.filter(doctor=doctor.email, date__gte=today, date__lte=today + timedelta(days=7))
+
+    data = []
+    day_name = date.today()
+
+    for avail in availability_records:
+        slots = generate_time_slots(avail.start_time, avail.end_time, avail.break_start, avail.break_end)
+        booked_slots = Appointments.objects.filter(doctor=avail, appointment_date=avail.date).values_list('appointment_time', flat=True)
+        available_slots = [slot for slot in slots if slot not in booked_slots]
+        day_name += timedelta(days=1)
+
+        data.append({
+            "date": avail.date.strftime("%Y-%m-%d"),
+            "day":day_name.strftime("%A"),
+            "available_time": available_slots,
+            "on_leave": avail.start_time is None or avail.end_time is None  # Check if doctor is on leave
+        })
+
+    return JsonResponse(data, safe=False)
+
+@api_view(["POST"])
+def book_appointment(request):
+    data = request.data
+    patient = request.session.get('user_email')
+    doctor_email = data.get("doctor_email")
+    appointment_date = parse_date(data.get("appointment_date"))
+    appointment_time = data.get("appointment_time")
+    print(patient)
+    
+    doctor = get_object_or_404(Doctors, email=doctor_email)
+
+    doctor = get_object_or_404(Doctors, email=doctor_email)
+    branch_code = doctor.branch_id
+    
+    if Appointments.objects.filter(patient=patient, doctor=doctor_email, appointment_date=appointment_date).exists():
+        return JsonResponse({"error": "You have already booked an appointment with this doctor on this day."}, status=400)
+    
+    
+
+    if Appointments.objects.filter(doctor=doctor.email, appointment_date=appointment_date, appointment_time=appointment_time).exists():
+        return JsonResponse({"error": "Slot already booked!"}, status=400)
+
+    appointment = Appointments.objects.create(
+        patient=patient,
+        doctor=doctor_email,
+        appointment_date=appointment_date,
+        appointment_time=appointment_time,
+        branch = branch_code,
+        is_booked=True
+    )
+    subject = f"Appointment booked on {appointment_date} - {appointment_time}"
+    message = f"""Your have booked an appointment on {appointment_date} at {appointment_time} with Dr. {doctor.name}({doctor_email}). This is just your booking you will be notified again about the appointment conformation.\n\nThank You!!\n\n\n\n-{doctor.branch}"""
+    email_from = settings.EMAIL_HOST_USER
+    receipent_list = [patient]
+    send_mail(subject, strip_tags(message), email_from, receipent_list)
+    
+
+    return JsonResponse({"message": "Appointment booked successfully!", "appointment_id": str(appointment.id)})
+
+    
+    
+
+@csrf_exempt
+def submit_review(request, doctor_email):
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+            patient_email = request.session.get('user_email')
+            rating = data.get("rating")
+            review_text = data.get("review", "")
+
+            if not all([patient_email, doctor_email, rating]):
+                return JsonResponse({"error": "Missing required fields."}, status=400)
+
+            patient = Patients.objects.get(email=patient_email)
+            
+            existing_review = Reviews.objects.filter(doctor=doctor_email, patient=patient_email).first()
+
+            if existing_review:
+                # Update existing review
+                existing_review.rating = rating
+                existing_review.review = review_text
+                existing_review.save()
+                
+            else:
+                Reviews.objects.create(
+                    doctor=doctor_email,
+                    patient=patient,
+                    rating=rating,
+                    review=review_text,
+                )
+
+            # Update doctor's average rating & count
+            rating_data = Reviews.objects.filter(doctor=doctor_email).aggregate(
+                avg_rating=Avg("rating"), total_reviews=Count("id")
+            )
+            Doctors.objects.filter(email=doctor_email).update(
+                rating=rating_data["avg_rating"], rating_counts=rating_data["total_reviews"]
+            )
+
+            return JsonResponse({"success": True, "message": "Review submitted successfully!"}, status=201)
+
+        except Patients.DoesNotExist:
+            return JsonResponse({"error": "Patient not found."}, status=404)
+        except Users.DoesNotExist:
+            return JsonResponse({"error": "Doctor not found."}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
 
 
 
