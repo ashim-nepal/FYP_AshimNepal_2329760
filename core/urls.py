@@ -55,6 +55,9 @@ urlpatterns = [
     path('api/get-patients/', views.get_patients, name='get_patients'),
     path('api/edit-patient/<uuid:patient_id>/', views.edit_patient, name='edit_patient'),
     path('api/delete-patient/<str:patient_email>/', views.delete_patient, name='delete_patient'),
+    # Doctor time availibality management
+    path('api/get-doctor-schedule/<str:doctor_email>/', views.get_doctor_schedule, name="get-doctor-schedule"),
+    path('api/update-doctor-schedule/<str:doctor_email>/', views.update_doctor_schedule, name = "update_doctor_schedule"),
     
     
     # path('create-user/', create_user_view, name='create-user')

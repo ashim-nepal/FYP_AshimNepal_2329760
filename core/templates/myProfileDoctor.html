@@ -47,7 +47,7 @@
 
         <div id="rating-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div class="bg-white hidden rounded-lg shadow-lg p-6 w-11/12 max-w-md">
-            <h2 class="text-lg font-bold text-[#29622E] mb-4">Rate the Doctor</h2>
+            <h2 class="text-lg font-bold text-[#29622E] mb-4"></h2>
             <div class="flex items-center justify-between">
             </div>
             <div class="flex justify-end mt-6 space-x-4">
@@ -59,6 +59,7 @@
 
       <div class="bg-white shadow-md p-6 rounded-lg w-full lg:w-2/3">
         <p class="mb-4"><span class="font-bold">Name:</span> Dr. {{doctor.name}}</p>
+        <p class="mb-4"><span class="font-bold">Email:</span> {{doctor.email}}</p>
         <p class="mb-4"><span class="font-bold">Department:</span> {{doctor.department}}</p>
         <p class="mb-4"><span class="font-bold">Expertise:</span> {{doctor.expertise}}</p>
         <p class="mb-4"><span class="font-bold">Education:</span> {{doctor.education}}</p>
@@ -68,10 +69,116 @@
 
   </section>
 
+
+  <section id ="scheduling-section">
+
+  <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
+    <h2 class="text-2xl font-bold mb-4 text-center">Set Your Availability</h2>
+    
+    <div id="schedule-container" class="space-y-4">
+
+
+    </div>
+
+    <button id="save-schedule"
+        class="mt-6 w-150 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">
+        Save Availability
+    </button>
+</div>
+</section>
+
+
   <section>
     Footer here
   </section>
   <script>
+    document.addEventListener("DOMContentLoaded", async function () {
+    let scheduleContainer = document.getElementById("schedule-container");
+    let saveButton = document.getElementById("save-schedule");
+  
+  
+      async function fetchSchedule() {
+        try{
+          let response = await fetch("/api/get-doctor-schedule/{{ doctor.email}}/");
+          console.log(response);
+
+
+      let result = await response.json(); // Convert JSON only if valid response
+      console.log(result);
+  
+          scheduleContainer.innerHTML = "";
+  
+          let days = result.schedule || [];
+  
+          for (let i = 0; i < 7; i++) {
+              let day = days[i] || {
+                  date: getFutureDate(i+2),
+                  working_day_type: null,
+                  is_locked: false
+              };
+  
+              let isLocked = day.is_locked ? "disabled" : "";
+              let selectedOption = day.working_day_type || "None"; // Handle new entries
+  
+              let row = `
+                  <div class="flex justify-between items-center mb-4 p-3 border border-gray-300 rounded">
+                      <span class="font-semibold">${day.date}-${day.day}</span>
+                      <select data-date="${day.date}" class="schedule-select w-48 p-2 border rounded" ${isLocked}>
+                          <option value="None" ${selectedOption === "None" ? "selected" : ""}>Not Set</option>
+                          <option value="Full" ${selectedOption === "Full" ? "selected" : ""}>Full Day</option>
+                          <option value="Half_Morning" ${selectedOption === "Half_Morning" ? "selected" : ""}>Half Day - Morning</option>
+                          <option value="Half_Evening" ${selectedOption === "Half_Evening" ? "selected" : ""}>Half Day - Evening</option>
+                          <option value="Leave" ${selectedOption === "Leave" ? "selected" : ""}>Leave</option>
+                      </select>
+                  </div>`;
+              scheduleContainer.innerHTML += row;
+          }
+      } catch(error){
+        console.log(error);
+      }
+    
+    }
+  
+      saveButton.addEventListener("click", async function () {
+          let selects = document.querySelectorAll(".schedule-select");
+          let scheduleData = [];
+  
+          selects.forEach((select) => {
+              let selectedValue = select.value !== "None" ? select.value : null;
+              scheduleData.push({
+                  date: select.getAttribute("data-date"),
+                  working_day_type: selectedValue,
+              });
+          });
+  
+          let response = await fetch("/api/update-doctor-schedule/{{ doctor.email }}/", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+              body: JSON.stringify({ schedule: scheduleData })
+          });
+
+  
+          let result = await response.json();
+          document.getElementById("response-message").innerText = result.message || "Error updating schedule";
+  
+          fetchSchedule(); // Reload after saving
+      });
+  
+      function getFutureDate(daysAhead) {
+          let today = new Date();
+          today.setDate(today.getDate() + daysAhead);
+          return today.toISOString().split("T")[0];
+      }
+  
+      function getCSRFToken() {
+          return document.cookie.split("; ").find(row => row.startsWith("csrftoken="))?.split("=")[1];
+      }
+  
+      fetchSchedule();
+    });
+
+
+
 
       // Confirm Logout
   function confirmLogout() {

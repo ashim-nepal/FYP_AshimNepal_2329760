@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.db import transaction
 import json, uuid, datetime
+from datetime import datetime, timedelta
 from .serializers import HospitalBranchSerializer, UserSerializer
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.hashers import check_password, make_password
@@ -72,12 +73,12 @@ def doctorProfilePage(request):
     
     #Get admin details from session
     doctor_id = request.session.get('user_id')
-    patient = Users.objects.get(id=doctor_id)
+    doctor = Users.objects.get(id=doctor_id)
 
     # Get hospital name based on admin's branch_id
     hospital_name = "Unknown Hospital"
-    if patient.branch:
-        branch = HospitalBranches.objects.get(branch_code=patient.branch.branch_code)
+    if doctor.branch:
+        branch = HospitalBranches.objects.get(branch_code=doctor.branch.branch_code)
         hospital_name = branch.branch_name  # Fetch the hospital name
         hospital_branch = branch.branch_code
         try:
@@ -1039,6 +1040,67 @@ def delete_patient(request, patient_email):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+
+
+##### Doctor's setting available time
+
+@csrf_exempt
+def get_doctor_schedule(request, doctor_email):
+
+    print(request)
+    doctor_email = doctor_email  # Fetch logged-in doctor
+    today = datetime.today().date()
+    next_week = [today  + timedelta(days=i+1) for i in range(7)]
+
+    schedule = []
+    for day in next_week:
+        record, created = DoctorAvailability.objects.get_or_create(
+            doctor_id=doctor_email, date=day,
+            defaults={"working_day_type": "None"}  # Default to None if not set
+        )
+        
+        if created:
+            record.save()
+
+        is_locked = Appointments.objects.filter(doctor=record, status="Approved").exists()
+        if is_locked:
+            record.is_locked = True
+            record.save()
+
+        schedule.append({
+            "date": record.date.strftime("%Y-%m-%d"),
+            "day":record.date.strftime("%A"),
+            "working_day_type": record.working_day_type,
+            "start_time": record.start_time.strftime("%H:%M") if record.start_time else None,
+            "end_time": record.end_time.strftime("%H:%M") if record.end_time else None,
+            "break_start": record.break_start.strftime("%H:%M") if record.break_start else None,
+            "break_end": record.break_end.strftime("%H:%M") if record.break_end else None,
+            "is_locked": record.is_locked,
+        })
+
+    return JsonResponse({"schedule": schedule}, status=200)
+
+
+@csrf_exempt
+def update_doctor_schedule(request, doctor_email):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        doctor = doctor_email
+        for entry in data["schedule"]:
+            date = datetime.strptime(entry["date"], "%Y-%m-%d").date()
+            availability = DoctorAvailability.objects.get(doctor=doctor, date=date)
+
+            if availability.is_locked:
+                continue  # Cannot modify locked days
+
+            availability.working_day_type = entry["working_day_type"]
+            availability.save()  # Auto-assigns times based on type
+
+        return JsonResponse({"message": "Schedule updated successfully!"}, status=200)
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 
 # def create_user_view(request):

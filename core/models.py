@@ -3,7 +3,7 @@ import uuid, json
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils.timezone import now
 from django.core.exceptions import ValidationError
-
+from datetime import time
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.mail import send_mail
@@ -148,35 +148,56 @@ class Doctors(models.Model):
         return f"{self.name} - {self.department.name}" 
 
 
+class DoctorAvailability(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    doctor = models.ForeignKey(Users,to_field='email', on_delete=models.CASCADE)  # Doctor user
+    date = models.DateField(null=True)
+    working_day_type = models.CharField(
+        max_length=20,
+        choices=[("Full", "Full Day"),("Half_Morning", "Half Morning") ,("Half_Evening", "Half Evening"), ("Leave", "Leave")], default="Full"
+    )
+    start_time = models.TimeField(null=True, blank=True)
+    end_time = models.TimeField(null=True, blank=True)
+    break_start = models.TimeField(null=True, blank=True)
+    break_end = models.TimeField(null=True, blank=True)
+    is_locked = models.BooleanField(default=False)
+    
+    def save(self, *args, **kwargs):
+        # Auto-assigns timings based on selected working type.
+        if self.working_day_type == "Full":
+            self.start_time, self.end_time = time(9, 0), time(17, 0)
+            self.break_start, self.break_end = time(13, 30), time(14, 30)
+        elif self.working_day_type == "Half_Morning":
+            self.start_time, self.end_time = time(9, 0), time(13, 30)
+            self.break_start, self.break_end = time(11, 30), time(12, 0)
+        elif self.working_day_type == "Half_Evening":
+            self.start_time, self.end_time = time(14, 0), time(17, 30)
+            self.break_start, self.break_end = time(16, 0), time(16, 30)
+        elif self.working_day_type == "Leave":
+            self.start_time = self.end_time = self.break_start = self.break_end = None
+
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.doctor.user.name} - {self.date} ({self.working_day_type})"
 
 
 class Appointments(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    patient = models.ForeignKey(Patients, on_delete=models.CASCADE)
-    doctor = models.ForeignKey(Doctors, on_delete=models.CASCADE)
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patients,to_field='email', on_delete=models.CASCADE)
+    doctor = models.ForeignKey(DoctorAvailability, on_delete=models.CASCADE)
+    branch = models.ForeignKey(HospitalBranches,to_field='branch_code', on_delete=models.CASCADE)
     appointment_date = models.DateField()
     appointment_time = models.TimeField()
+    start_time = models.TimeField(null=True)
+    end_time = models.TimeField(null=True)
+    is_booked = models.BooleanField(default=False)  # If a patient has booked this slot
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected'), ('Completed', 'Completed')], default='Pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.patient.user.name} - {self.doctor.user.name}"
 
-
-class DoctorAvailability(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    doctor = models.ForeignKey(Doctors, on_delete=models.CASCADE)
-    day_of_week = models.CharField(max_length=10, choices=[
-        ('Monday', 'Monday'), ('Tuesday', 'Tuesday'), ('Wednesday', 'Wednesday'),
-        ('Thursday', 'Thursday'), ('Friday', 'Friday'), ('Saturday', 'Saturday'),
-        ('Sunday', 'Sunday')])
-    start_time = models.TimeField()
-    end_time = models.TimeField()
-    branch = models.ForeignKey(HospitalBranches, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return f"{self.doctor.user.name} - {self.day_of_week}"
 
 
 class Messages(models.Model):

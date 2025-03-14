@@ -329,7 +329,9 @@
   document.getElementById("open-banner-modal").addEventListener("click", async () => {
     try {
         let response = await fetch("/api/get-banner/");
+        console.log(response);
         let data = await response.json();
+        console.log(data);
         if (response.ok) {
             document.getElementById("banner-preview").src = data.banner_file;
             document.getElementById("banner-modal").classList.remove("hidden");
