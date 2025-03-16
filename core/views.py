@@ -1048,8 +1048,7 @@ def delete_patient(request, patient_email):
 
 @csrf_exempt
 def get_doctor_schedule(request, doctor_email):
-
-    print(request)
+    
     doctor_email = doctor_email  # Fetch logged-in doctor
     today = datetime.today().date()
     next_week = [today  + timedelta(days=i+1) for i in range(7)]
@@ -1287,6 +1286,70 @@ def submit_review(request, doctor_email):
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
 
+
+def get_doctor_appointments(request):
+    doctor_email = request.session.get('user_email')
+    appointments = Appointments.objects.filter(doctor=doctor_email, status="Pending")
+
+    data = [
+        {
+            "id": appointment.id,
+            "patient_email": appointment.patient,
+            "appointment_date": appointment.appointment_date.strftime("%Y-%m-%d"),
+            "appointment_time": appointment.appointment_time.strftime("%H:%M"),
+            "is_emergency": appointment.is_emergency,
+        }
+        for appointment in appointments
+    ]
+    return JsonResponse({"appointments": data}, status=200)
+
+
+# Accept or Reject Appointment
+@csrf_exempt
+def manage_appointment_request(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            appointment_id = data.get("appointment_id")
+            action = data.get("action")  # "Accept" or "Reject"
+            rejection_reason = data.get("rejection_reason", "")
+
+            appointment = get_object_or_404(Appointments, id=appointment_id, doctor=request.session.get('user_email'))
+            doc = get_object_or_404(Doctors, email=request.session.get('user_email'))
+
+
+            if action == "Accept":
+                appointment.status = "Approved"
+                appointment.save()
+                send_mail(
+                    subject="Appointment Confirmed",
+                    message=f"Dear Patient User,\n\nYour appointment on {appointment.appointment_date} at {appointment.appointment_time} with Dr. {doc.name}({doc.email} | {doc.department}) has been confirmed.\n\nThank you.",
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[appointment.patient],
+                )
+                return JsonResponse({"success": True, "message": "Appointment approved successfully."})
+
+            elif action == "Reject":
+                appointment.status = "Rejected"
+                appointment.save()
+
+                # Send rejection email
+                send_mail(
+                    subject="Appointment Rejected",
+                    message=f"Dear Patient User,\n\nYour appointment on {appointment.appointment_date} at {appointment.appointment_time} with Dr. {doc.name}({doc.email}) has been rejected.\n\nReason: {rejection_reason}\n\nThank you.",
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[appointment.patient],
+                )
+
+                return JsonResponse({"success": True, "message": "Appointment rejected and email sent to patient."})
+
+            else:
+                return JsonResponse({"error": "Invalid action"}, status=400)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 # def create_user_view(request):

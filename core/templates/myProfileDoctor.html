@@ -65,7 +65,14 @@
         <p class="mb-4"><span class="font-bold">Education:</span> {{doctor.education}}</p>
         <p class="mb-4"><span class="font-bold">Hospitals Worked:</span> {{doctor.hospitals_worked}}</p>
         <p class="mb-4"><span class="font-bold">Achievements:</span> {{doctor.achievements}}</p>
-        <p class="font-bold mb-2">Working Time:</p>
+        <button onclick="document.getElementById('appointment-modal').classList.remove('hidden')" 
+            class="bg-[#29622E] text-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#29450E] text-700">
+            View Appointment Requests
+        </button>
+        <button onclick="document.getElementById('appointment-modal').classList.remove('hidden')" 
+            class="bg-[#29622E] text-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#29450E] text-700">
+            Upcoming Appointments
+        </button>
 
   </section>
 
@@ -91,6 +98,41 @@
   <section>
     Footer here
   </section>
+
+
+  <!-- Appointment Modal -->
+<div id="appointment-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white w-500 p-6 rounded-lg shadow-lg">
+      <h3 class="text-xl font-bold mb-4">Appointment Requests</h3>
+      <table class="w-full bg-gray-100 border">
+          <thead>
+              <tr class="text-gray-700">
+                  <th class="border px-4 py-2">Patient</th>
+                  <th class="border px-4 py-2">Date</th>
+                  <th class="border px-4 py-2">Time</th>
+                  <th class="border px-4 py-2">Status</th>
+                  <th class="border px-4 py-2">Actions</th>
+              </tr>
+          </thead>
+          <tbody id="appointment-list"></tbody>
+      </table>
+      <button onclick="document.getElementById('appointment-modal').classList.add('hidden')" class="bg-gray-500 text-white px-3 py-1 rounded mt-4">Close</button>
+  </div>
+</div>
+
+<!-- Rejection Modal -->
+<div id="rejection-modal" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white w-96 p-6 rounded-lg shadow-lg">
+      <h3 class="text-xl font-bold mb-4">Reject Appointment</h3>
+      <textarea id="rejection-reason" class="w-full border p-2 rounded" placeholder="Enter reason for rejection"></textarea>
+      <button id="reject-appointment" class="bg-red-600 text-white px-4 py-2 rounded mt-4">Reject</button>
+      <button onclick="document.getElementById('rejection-modal').classList.add('hidden')" class="bg-gray-500 text-white px-3 py-1 rounded mt-4">Close</button>
+  </div>
+</div>
+
+
+
+
   <script>
     document.addEventListener("DOMContentLoaded", async function () {
     let scheduleContainer = document.getElementById("schedule-container");
@@ -184,6 +226,86 @@
       fetchSchedule();
     });
 
+
+    // Appointments booking viewing appointments, accepting and rejecting
+    document.addEventListener("DOMContentLoaded", function () {
+      const appointmentList = document.getElementById("appointment-list");
+      const responseMessage = document.getElementById("response-message");
+      const rejectionModal = document.getElementById("rejection-modal");
+      const rejectionReasonInput = document.getElementById("rejection-reason");
+      let selectedAppointmentId = null;
+  
+      async function fetchAppointments() {
+          let response = await fetch("/api/get-doctor-appointments/");
+          let result = await response.json();
+          console.log(result);
+  
+          appointmentList.innerHTML = ""; // Clear existing data
+  
+          if (result.appointments.length === 0) {
+              appointmentList.innerHTML = "<p class='text-gray-500 text-center'>No pending appointment requests.</p>";
+              return;
+          }
+  
+          result.appointments.forEach((appointment) => {
+              let row = `
+                  <tr class="border-b">
+                      <td class="px-4 py-2">${appointment.patient_email}</td>
+                      <td class="px-4 py-2">${appointment.appointment_date}</td>
+                      <td class="px-4 py-2">${appointment.appointment_time}</td>
+                      <td class="px-4 py-2">${appointment.is_emergency ? "🚨 Emergency" : "Regular"}</td>
+                      <td class="px-4 py-2">
+                          <button onclick="approveAppointment('${appointment.id}')" class="bg-green-600 text-white px-3 py-1 rounded">Accept</button>
+                          <button onclick="openRejectionModal('${appointment.id}')" class="bg-red-600 text-white px-3 py-1 rounded ml-2">Reject</button>
+                      </td>
+                  </tr>`;
+              appointmentList.innerHTML += row;
+          });
+      }
+  
+      window.approveAppointment = async function (appointmentId) {
+          let response = await fetch("/api/manage-appointment-request/", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+              body: JSON.stringify({ appointment_id: appointmentId, action: "Accept" }),
+          });
+  
+          let result = await response.json();
+          alert(result.message || "Could not Process Task");
+          fetchAppointments();
+      };
+  
+      window.openRejectionModal = function (appointmentId) {
+          selectedAppointmentId = appointmentId;
+          rejectionModal.classList.remove("hidden");
+      };
+  
+      document.getElementById("reject-appointment").addEventListener("click", async function () {
+          let rejectionReason = rejectionReasonInput.value.trim();
+          if (!rejectionReason) {
+              alert("Please provide a reason for rejection.");
+              return;
+          }
+  
+          let response = await fetch("/api/manage-appointment-request/", {
+              method: "POST",
+              headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+              body: JSON.stringify({ appointment_id: selectedAppointmentId, action: "Reject", rejection_reason: rejectionReason }),
+          });
+  
+          let result = await response.json();
+          rejectionModal.classList.add("hidden");
+          print(result);
+          alert(result.message || "Could not Process Task");
+          fetchAppointments();
+      });
+  
+      function getCSRFToken() {
+          return document.cookie.split("; ").find((row) => row.startsWith("csrftoken="))?.split("=")[1];
+      }
+  
+      fetchAppointments();
+  });
 
 
 
