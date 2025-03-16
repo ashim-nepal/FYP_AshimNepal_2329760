@@ -1327,6 +1327,9 @@ def manage_appointment_request(request):
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[appointment.patient],
                 )
+                
+                DoctorAvailability.objects.filter(doctor=request.session.get('user_email'), date = appointment.appointment_date).update(is_locked = True)
+
                 return JsonResponse({"success": True, "message": "Appointment approved successfully."})
 
             elif action == "Reject":
@@ -1340,6 +1343,7 @@ def manage_appointment_request(request):
                     from_email=settings.EMAIL_HOST_USER,
                     recipient_list=[appointment.patient],
                 )
+                
 
                 return JsonResponse({"success": True, "message": "Appointment rejected and email sent to patient."})
 
