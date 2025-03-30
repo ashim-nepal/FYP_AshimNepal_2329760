@@ -1289,7 +1289,7 @@ def submit_review(request, doctor_email):
 
 def get_doctor_appointments(request):
     doctor_email = request.session.get('user_email')
-    appointments = Appointments.objects.filter(doctor=doctor_email, status="Pending")
+    appointments = Appointments.objects.filter(doctor=doctor_email)
 
     data = [
         {
@@ -1297,6 +1297,7 @@ def get_doctor_appointments(request):
             "patient_email": appointment.patient,
             "appointment_date": appointment.appointment_date.strftime("%Y-%m-%d"),
             "appointment_time": appointment.appointment_time.strftime("%H:%M"),
+            "appointment_status": appointment.status,
             "is_emergency": appointment.is_emergency,
         }
         for appointment in appointments
@@ -1354,6 +1355,53 @@ def manage_appointment_request(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+
+
+
+@csrf_exempt
+def update_appointment_status(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        appointment = get_object_or_404(Appointments, id=data["appointment_id"])
+        status = data["status"]
+        doc = get_object_or_404(Doctors, email=appointment.doctor)
+        print(doc.name)
+        patient = get_object_or_404(Patients, email=appointment.patient)
+        print(patient.name)
+        
+        if status == "Completed":
+            appointment.status = status
+            appointment.save()
+            
+            
+            # Mail to Ptient
+            send_mail(
+                    subject="Appointment Consultation completed",
+                    message=f"Dear {patient.name},\n\nYour appointment on {appointment.appointment_date} at {appointment.appointment_time} with Dr. {doc.name}({doc.email} | {doc.department}) has been Completed. You can now view your Prescription records digitally on your syncHealth profile.\n\nThank you for syncing with syncHealth.",
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[appointment.patient],
+                )
+            
+            return JsonResponse({"message": f"Appointment marked as {status}!"}, status=200)
+        
+        if status == "Cancelled":
+            appointment.status = status
+            appointment.save()
+            
+            send_mail(
+                    subject="Appointment Consultation Cancelled",
+                    message=f"Dear {patient.name},\n\nYour appointment on {appointment.appointment_date} at {appointment.appointment_time} with Dr. {doc.name}({doc.email} | {doc.department}) has been cancelled because of your absence on the date: {appointment.appointment_date}.\n\nThank you.",
+                    from_email=settings.EMAIL_HOST_USER,
+                    recipient_list=[appointment.patient],
+                )
+            
+            return JsonResponse({"message": f"Appointment marked as {status}!"}, status=200)
+
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 
 # def create_user_view(request):

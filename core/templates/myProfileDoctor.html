@@ -69,9 +69,9 @@
             class="bg-[#29622E] text-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#29450E] text-700">
             View Appointment Requests
         </button>
-        <button onclick="document.getElementById('appointment-modal').classList.remove('hidden')" 
+        <button id="viewAppointments" 
             class="bg-[#29622E] text-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-[#29450E] text-700">
-            Upcoming Appointments
+            View Appointments
         </button>
 
   </section>
@@ -129,6 +129,31 @@
       <button onclick="document.getElementById('rejection-modal').classList.add('hidden')" class="bg-gray-500 text-white px-3 py-1 rounded mt-4">Close</button>
   </div>
 </div>
+
+
+<!-- View Appointments Modal -->
+<div id="appointmentDialogue" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white w-180 p-6 rounded-lg shadow-lg">
+      <h3 class="text-xl font-bold mb-4">My Upcoming Appointments</h3>
+      <input type="text" id="searchEmail" placeholder="Search by patient email">
+      <button onclick="searchPatient()">Search</button>
+      <table class="w-full bg-gray-100 border">
+        <thead>
+            <tr class="text-gray-700">
+                <th class="border px-4 py-2">Patient</th>
+                <th class="border px-4 py-2">Date</th>
+                <th class="border px-4 py-2">Time</th>
+                <th class="border px-4 py-2">Prescription</th>
+                <th class="border px-4 py-2">Actions</th>
+            </tr>
+        </thead>
+        <tbody id="appointmentList"></tbody>
+    </table>
+    <button onclick="document.getElementById('appointmentDialogue').classList.add('hidden')" class="bg-gray-500 text-white px-3 py-1 rounded mt-4">Close</button>
+  </div>
+</div>
+
+
 
 
 
@@ -238,16 +263,20 @@
       async function fetchAppointments() {
           let response = await fetch("/api/get-doctor-appointments/");
           let result = await response.json();
-          console.log(result);
+          
+          const filteredAppointments = result.appointments.filter(
+            (appointments) => appointments.appointment_status === "Pending"
+          );
+          console.log(filteredAppointments);
   
           appointmentList.innerHTML = ""; // Clear existing data
   
-          if (result.appointments.length === 0) {
+          if (filteredAppointments.length === 0) {
               appointmentList.innerHTML = "<p class='text-gray-500 text-center'>No pending appointment requests.</p>";
               return;
           }
   
-          result.appointments.forEach((appointment) => {
+          filteredAppointments.forEach((appointment) => {
               let row = `
                   <tr class="border-b">
                       <td class="px-4 py-2">${appointment.patient_email}</td>
@@ -306,6 +335,78 @@
   
       fetchAppointments();
   });
+
+
+
+  // Upcoming Appointments
+  document.getElementById("viewAppointments").addEventListener("click", function() {
+    fetch('/api/get-doctor-appointments/')
+        .then(response => response.json())
+        .then(data => {
+          const filteredAppointments = data.appointments.filter(
+            (appointments) => appointments.appointment_status != "Pending" && appointments.appointment_status != "Rejected"
+          );
+
+          document.getElementById("appointmentDialogue").classList.remove("hidden")
+
+          console.log(filteredAppointments);
+            let content = "";
+            filteredAppointments.forEach(appointment => {
+                let disabled = (appointment.appointment_status === "Completed" || appointment.appointment_status === "Cancelled") ? "disabled" : "";
+                let completedColor = (disabled) ? "gray" : "green";
+                let cancelledColor = (disabled) ? "gray" : "red";
+                
+                content += `
+                      <tr class="border-b">
+                      <td class="px-4 py-2">${appointment.patient_email}</td>
+                      <td class="px-4 py-2">${appointment.appointment_date}</td>
+                      <td class="px-4 py-2">${appointment.appointment_time}</td>
+                      <td class="px-4 py-2">
+                        <button onclick="openPrescription('${appointment.patient_email}', '${appointment.appointment_date}')" 
+                          style="background: none; border: none;">
+                          📄📄📄📄
+                        </button>
+                      </td>
+                      <td class="px-4 py-2">
+                          <button onclick="updateStatus('${appointment.id}', 'Completed')" class="bg-${completedColor}-600 text-white px-3 py-1 rounded" ${disabled}>Complete</button>
+                          <button onclick="updateStatus('${appointment.id}', 'Cancelled')" class="bg-${cancelledColor}-600 text-white px-3 py-1 rounded ml-2" ${disabled}>Cancel</button>
+                      </td>
+                  </tr>
+                `;
+            });
+            document.getElementById("appointmentList").innerHTML = content;
+        });
+});
+
+function updateStatus(appointment_id, status) {
+    fetch('/api/update-appointment/', { 
+        method: "POST", 
+        body: JSON.stringify({ appointment_id, status }),
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(() => alert(`Appointment marked as ${status}!`))
+    .then(() => location.reload());
+}
+
+function openPrescription(patient_email, date) {
+    fetch('/manage-prescription/', { 
+        method: "POST", 
+        body: JSON.stringify({ patient_email, date }),
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(() => alert("Prescription opened"));
+}
+
+function searchPatient() {
+    let email = document.getElementById("searchEmail").value;
+    fetch('/search-patient/', { 
+        method: "POST", 
+        body: JSON.stringify({ patient_email: email }),
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(response => response.json())
+    .then(data => alert("Past records fetched!"));
+}
 
 
 

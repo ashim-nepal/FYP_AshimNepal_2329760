@@ -66,6 +66,8 @@ urlpatterns = [
     # Doctor's tasks
     path("api/get-doctor-appointments/", views.get_doctor_appointments, name="get-doctor-appointments"),
     path("api/manage-appointment-request/", views.manage_appointment_request, name="manage-appointment-request"),
+    path("api/update-appointment/", views.update_appointment_status, name="update_appointment"),
+    path("api/update-appointment-status/", views.update_appointment_status, name="update_appointment_status"),
     
     
     # path('create-user/', create_user_view, name='create-user')

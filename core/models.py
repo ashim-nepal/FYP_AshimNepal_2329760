@@ -131,7 +131,7 @@ class Doctors(models.Model):
     education = models.TextField(default="No Education added")  # Education Details
     hospitals_worked = models.TextField(default="syncHealth")  # List of Hospitals Previously Worked
     achievements = models.TextField(default="No achievements added")  # Achievements 
-    rating = models.DecimalField(max_digits=5, decimal_places=3, default=0.000)  # Rating (Updated from Reviews)
+    rating = models.DecimalField(max_digits=5, decimal_places=2, default=0.000)  # Rating (Updated from Reviews)
     rating_counts = models.IntegerField(default=0)
     branch = models.ForeignKey(HospitalBranches, to_field='branch_code', on_delete=models.CASCADE)  # Branch ForeignKey (Using branch_code)
 
@@ -192,7 +192,7 @@ class Appointments(models.Model):
     appointment_date = models.DateField()
     appointment_time = models.TimeField()
     is_booked = models.BooleanField(default=False)  # If a patient has booked this slot
-    status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected'), ('Completed', 'Completed')], default='Pending')
+    status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Rejected', 'Rejected'), ('Completed', 'Completed'), ('Cancelled', 'Cancelled')], default='Pending')
     is_emergency = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -243,6 +243,7 @@ class TestResults(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     patient = models.ForeignKey(Patients, on_delete=models.CASCADE)
     test = models.ForeignKey(HealthPackages, on_delete=models.CASCADE)
+    report_file = models.FileField(upload_to='health_test_reports/', null=True, blank=True)
     result_value = models.FloatField()
     result_date = models.DateField()
 
@@ -288,11 +289,12 @@ class TestBooking(models.Model):
 
 class Prescriptions(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    patient = models.ForeignKey(Patients, on_delete=models.CASCADE)
-    doctor = models.ForeignKey(Doctors, on_delete=models.CASCADE)
+    patient = models.ForeignKey(Patients, to_field='email', on_delete=models.CASCADE)
+    doctor = models.ForeignKey(Doctors, to_field='email', on_delete=models.CASCADE)
     date = models.DateField()
-    blood_pressure = models.CharField(max_length=20, null=True, blank=True)
-    diabetes = models.CharField(max_length=20, null=True, blank=True)
+    pressure_systolic = models.CharField(max_length=20, null=True, blank=True) # Top mm/Hg
+    pressure_diastolic = models.CharField(max_length=20, null=True, blank=True) # Top mm/Hg
+    diabetes = models.CharField(max_length=20, null=True, blank=True) # mg/dL
     medication = models.TextField(null=True, blank=True)
     notes = models.TextField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
