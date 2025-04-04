@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Health Package Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-5">
+
+    <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-md">
+        <img id="packagePic" class="w-24 h-24 rounded" src="/media/{{hlt_pkg.image}}" alt="Health Package">
+        <h2 class="text-2xl font-semibold">{{ hlt_pkg.name }}</h2>
+        <p class="text-gray-600">{{ hlt_pkg.description }}</p>
+
+        <div class="flex flex-wrap gap-2 mt-4">
+            <!-- Date buttons dynamically inserted here -->
+        </div>
+
+        <p class="text-xl font-bold mt-4">Price Rs. {{hlt_pkg.price}}</p>
+        <button id="bookBtn" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg opacity-50 cursor-not-allowed">
+            Book Health Package
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const bookBtn = document.getElementById("bookBtn");
+            let selectedDate = null;
+            const datesContainer = document.querySelector(".flex-wrap");
+
+            // Generate 7 future date buttons
+            const today = new Date();
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(today.getDate() + i);
+                const dateString = date.toISOString().split("T")[0];
+                const dayName = date.toLocaleDateString("en-US", { weekday: "long" });
+
+                const btn = document.createElement("button");
+                btn.className = "date-btn bg-gray-300 text-black px-3 py-2 rounded-md";
+                btn.innerText = `${dateString} (${dayName})`;
+                btn.dataset.date = dateString;
+
+                btn.addEventListener("click", function() {
+                    document.querySelectorAll(".date-btn").forEach(b => {
+                        b.classList.remove("bg-green-500", "text-white");
+                        b.classList.add("bg-gray-300", "text-black");
+                    });
+                    this.classList.remove("bg-gray-300", "text-black");
+                    this.classList.add("bg-green-500", "text-white");
+
+                    selectedDate = this.dataset.date;
+                    bookBtn.classList.remove("opacity-50", "cursor-not-allowed");
+                    bookBtn.classList.add("cursor-pointer");
+                });
+
+                datesContainer.appendChild(btn);
+            }
+
+            // Booking confirmation
+            bookBtn.addEventListener("click", function() {
+                if (!selectedDate) return;
+                
+                const userLoggedIn = true; // Mock login check
+                const userRole = "{{user_role}}"; // Mock user role check
+
+                if (userRole !== "patient") {
+                    alert("You must be logged in as a patient to book a package.");
+                    return;
+                }
+
+                const confirmBooking = confirm(`Confirm booking for ${selectedDate}?`);
+                if (confirmBooking) {
+                    fetch("/api/book-health-package/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                            patient_email: "{{user_email}}",
+                            branch: "{{hlt_pkg.branch}}",
+                            test_id: "{{hlt_pkg.id}}",
+                            test_date: selectedDate
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => alert(data.message || data.error))
+                    .catch(err => console.error("Error:", err));
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

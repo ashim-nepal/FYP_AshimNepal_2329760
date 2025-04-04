@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Centre Booking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="script.js"></script>
+</head>
+<body class="bg-gray-100 p-6">
+
+    <div class="max-w-4xl mx-auto bg-white shadow-lg rounded-lg p-6">
+        <!-- Test Centre Details -->
+        <div id="testCentreDetails">
+            <img id="centrePic" class="w-24 h-24 rounded" src="/media/{{tst_profile}}" alt="Test Centre">
+            <h2 id="centreName" class="text-2xl font-bold text-gray-800 mt-2">{{tst_cnt.name}}</h2>
+            <p id="centreDescription" class="text-gray-600 mt-2">{{tst_cnt.description}}</p>
+            <p class="text-gray-800"><strong>Branch:</strong> {{tst_cnt.branch}}</p>
+            <p class="text-gray-800-u"><strong>Email:</strong> <a href="#">{{tst_cnt.email}}</a></p>
+        </div>
+
+        <!-- Booking Dates -->
+        <div id="dateButtons" class="mt-4 flex flex-wrap gap-2"></div>
+
+        <!-- Book Appointment Button -->
+        <button id="bookTestBtn" class="w-full bg-green-600 text-white p-2 mt-4 rounded disabled:opacity-50" disabled>
+            Book Appointment
+        </button>
+
+        <!-- Other Test Centres -->
+        <h3 class="text-xl font-semibold mt-6">Other Test Centres:</h3>
+        <div id="otherTestCentres" class="flex space-x-4 mt-2 overflow-x-auto"></div>
+    </div>
+
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const testCentreId = "{{tst_cnt.email}}"; // Dynamically set this ID
+            const patientNo = "{{user_email}}"; // Replace dynamically
+            const userRole = "{{user_role}}";
+            const bookTestBtn = document.getElementById("bookTestBtn");
+            const dateButtons = document.getElementById("dateButtons");
+
+            let selectedDate = null;
+    
+        
+            // Generate Date Buttons (Next 7 Days)
+    for (let i = 0; i < 7; i++) {
+        let date = new Date();
+        date.setDate(date.getDate() + i);
+        let dateString = date.toISOString().split("T")[0];
+
+        let options = { weekday: 'short', month: 'short', day: 'numeric' };
+        let displayDate = date.toLocaleDateString("en-US", options);
+
+        let btn = document.createElement("button");
+        btn.classList.add("bg-gray-200", "text-gray-700", "px-4", "py-2", "rounded", "transition");
+        btn.textContent = displayDate;
+        btn.dataset.date = dateString;
+
+        btn.onclick = () => {
+            selectedDate = dateString;
+
+            // Reset styles for all buttons
+            document.querySelectorAll("#dateButtons button").forEach(b => {
+                b.classList.remove("bg-green-500", "text-white");
+                b.classList.add("bg-gray-200", "text-gray-700");
+            });
+
+            // Highlight selected button
+            btn.classList.add("bg-green-500", "text-white");
+            btn.classList.remove("bg-gray-200", "text-gray-700");
+
+            // Enable book button
+            bookTestBtn.disabled = false;
+            bookTestBtn.dataset.date = dateString;
+        };
+
+        dateButtons.appendChild(btn);
+    }
+        
+            // Book Appointment
+            bookTestBtn.addEventListener("click", function () {
+                if (!selectedDate){
+                    alert("Please select a date before booking.");
+                    return;
+                }
+
+                if (userRole !== "patient") {
+                    alert("You must be logged in as a patient to book an appointment.");
+                    return;
+                }
+
+                let confirmBooking = confirm(`Confirm your appointment date on ${selectedDate}?`);
+                if (!confirmBooking) return;
+
+                fetch("/api/book-test-appointment/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        patient: patientNo,
+                        test_centre: testCentreId,
+                        booking_date: selectedDate,
+                    })
+                }).then(response => response.json())
+                  .then(data => alert(data.message || data.error));
+            });
+        });
+        
+
+    </script>
+
+</body>
+</html>

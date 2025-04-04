@@ -72,6 +72,14 @@ urlpatterns = [
     path('manage-prescription/', views.manage_prescription, name="manage_prescription"),
     path('get_prescription/<uuid:appointment_id>/', views.get_prescription, name='get_prescription'),
     path('save_prescription/', views.save_prescription, name='save_prescription'),
+    # Test Centres
+    path("test-centres/<str:centre_email>/", views.test_centres, name="test_centres"),
+    path("api/book-test-appointment/", views.book_test, name="book_test"),
+    
+    # Health Packages
+    path("health-package/<uuid:package_id>/", views.health_packages, name="health_packages"),
+    path('api/book-health-package/', views.book_health_package, name = "book_healthPackage")
+    
     # path('create-user/', create_user_view, name='create-user')
 ]
 

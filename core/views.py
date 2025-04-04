@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews, Prescriptions
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews, Prescriptions, TestResults, TestBooking, HealthPackageBookings
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -1485,6 +1485,148 @@ def manage_prescription(request):
     return JsonResponse({"error": "Invalid request"}, status=400)
 
 
+
+
+
+
+
+################### Test Centre #########################
+def test_centres(request, centre_email):
+    
+    user_role =  request.session.get('user_role')
+    
+    user_email = request.session.get('user_email')
+    user_role = request.session.get('user_role')
+    
+    tc = get_object_or_404(TestCentre, email=centre_email)
+    
+    profile = get_object_or_404(Users, email=centre_email)
+    profile_pic = profile.profile_pic
+    
+    return render(request, 'testCentre.html',{'tst_cnt': tc, 'tst_profile':profile_pic, 'user_email':user_email, 'user_role':user_role})   
+
+
+
+
+@csrf_exempt
+def book_test(request):
+    """Handles test booking requests."""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            patient = data.get("patient")
+            test_centre = data.get("test_centre")
+            booking_date = data.get("booking_date")
+
+            # Validate inputs
+            if not all([patient, test_centre, booking_date]):
+                return JsonResponse({"error": "All fields are required."}, status=400)
+
+            booking_date = parse_date(booking_date)
+            if not booking_date or booking_date < datetime.today().date():
+                return JsonResponse({"error": "Invalid booking date."}, status=400)
+
+            test_centre = get_object_or_404(TestCentre, email=test_centre)
+            patient = get_object_or_404(Patients, email=patient)
+            
+            existing_booking = TestBooking.objects.filter(
+                patient=patient.email,
+                test_department=test_centre.email,
+                booking_date=booking_date
+            ).exists()
+
+            if existing_booking:
+                return JsonResponse({"error": "You already have a booking at this test centre on this date."}, status=400)
+
+
+            # Check if 50 bookings already exist for that test centre on the selected date
+            booking_count = TestBooking.objects.filter(test_department=test_centre, booking_date=booking_date).count()
+            if booking_count >= 50:
+                return JsonResponse({"error": "Booking limit reached for this day."}, status=400)
+
+            # Create booking
+            booking = TestBooking.objects.create(
+                patient=patient.email,
+                status="Pending",
+                test_department=test_centre.email,
+                booking_date=booking_date,
+            )
+            return JsonResponse({"message": "Test booked successfully!", "booking_id": str(booking.id)})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid data format."}, status=400)
+
+    return JsonResponse({"error": "Invalid request."}, status=405)
+
+
+
+
+
+
+
+############################ Health Packages #######################
+def health_packages(request, package_id):
+    
+    
+    user_email = request.session.get('user_email')
+    user_role = request.session.get('user_role')
+    
+    hp = get_object_or_404(HealthPackages, id=package_id)
+
+    
+    return render(request, 'healthPackage.html',{'hlt_pkg': hp, 'user_email':user_email, 'user_role':user_role})   
+
+
+
+@csrf_exempt
+def book_health_package(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            patient_email = data.get("patient_email")
+            test_id = data.get("test_id")
+            branch = data.get("branch")
+            test_date = data.get("test_date")
+
+            if not all([patient_email, test_id, branch, test_date]):
+                return JsonResponse({"error": "Missing required fields"}, status=400)
+
+            # Validate date
+            try:
+                test_date_obj = datetime.strptime(test_date, "%Y-%m-%d").date()
+            except ValueError:
+                return JsonResponse({"error": "Invalid date format"}, status=400)
+
+            # Get user and package
+            try:
+                patient = Users.objects.get(email=patient_email)
+            except Users.DoesNotExist:
+                return JsonResponse({"error": "Invalid patient email"}, status=404)
+
+            try:
+                health_package = HealthPackages.objects.get(id=test_id)
+            except HealthPackages.DoesNotExist:
+                return JsonResponse({"error": "Invalid package ID"}, status=404)
+
+            # Check if patient already booked this package on the same date
+            if HealthPackageBookings.objects.filter(patient=patient.email, test_date=test_date_obj).exists():
+                return JsonResponse({"error": "You already booked this package on this date."}, status=400)
+
+            # Limit 20 bookings per day
+            if HealthPackageBookings.objects.filter(test=health_package, test_date=test_date_obj).count() >= 20:
+                return JsonResponse({"error": "Booking limit reached for this package on the selected date."}, status=400)
+
+            # Create booking
+            booking = HealthPackageBookings.objects.create(
+                test=health_package, patient=patient.email, branch=branch, test_date=test_date_obj, status="Pending"
+            )
+
+            return JsonResponse({"message": "Booking successful!", "booking_id": str(booking.id)})
+
+        except json.JSONDecodeError:
+            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
+    return JsonResponse({"error": "Invalid request method"}, status=405)
 
 
 # def create_user_view(request):

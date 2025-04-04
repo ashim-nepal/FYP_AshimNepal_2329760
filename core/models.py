@@ -228,10 +228,10 @@ class HealthPackages(models.Model):
 class HealthPackageBookings(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     test = models.ForeignKey(HealthPackages, on_delete=models.CASCADE)
-    patient = models.ForeignKey(Patients, on_delete=models.CASCADE)
-    branch = models.ForeignKey(HospitalBranches,to_field='branch_code', on_delete=models.CASCADE)
+    patient = models.CharField(max_length=100, default="Patient's Email") 
+    branch = models.CharField(max_length=100, default="Hospital branch") 
     test_date = models.DateField()
-    status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'), ('Completed', 'Completed')], default='Pending')
+    status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'),('Processing', 'Processing'), ('Completed', 'Completed'), ('Cancelled', 'Cancelled')], default='Pending')
     report_file = models.FileField(upload_to='test_reports/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -262,24 +262,24 @@ class TestCentre(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.name} - {self.branch.name}"
+        return f"{self.name} - {self.branch}"
     
 
 class TestBooking(models.Model):
     STATUS_CHOICES = [
         ('Pending', 'Pending'),
         ('Approved', 'Approved'),
-        ('Processing', 'Processing'),
         ('Sample Collected', 'Sample Collected'),
+        ('Processing', 'Processing'),
         ('Completed', 'Completed'),
+        ('Cancelled', 'Cancelled'),
         ('Rejected', 'Rejected'),
     ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    patient = models.ForeignKey('Patients',to_field='patient_no', on_delete=models.CASCADE, related_name="test_bookings")  # Linked Patient
-    test_department = models.ForeignKey(TestCentre, on_delete=models.CASCADE)  # Selected Test Department
+    patient = models.CharField(max_length=100, default="Patient's Email")  # Linked Patient
+    test_department = models.CharField(max_length=100, default="Department email") # Selected Test Department
     booking_date = models.DateField()  # Date of booking
-    booking_time = models.TimeField()  # Selected Time Slot
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')  # Test Status
     test_report = models.FileField(upload_to="test_reports/", null=True, blank=True)  # Test Report PDF
     created_at = models.DateTimeField(auto_now_add=True)
