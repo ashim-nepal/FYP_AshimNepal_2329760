@@ -289,8 +289,9 @@ class TestBooking(models.Model):
 
 class Prescriptions(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    patient = models.ForeignKey(Patients, to_field='email', on_delete=models.CASCADE)
-    doctor = models.ForeignKey(Doctors, to_field='email', on_delete=models.CASCADE)
+    appointment_id = models.CharField(max_length=80, null=True, blank=True)
+    patient = models.CharField(max_length=50, null=True, blank=True)
+    doctor = models.CharField(max_length=50, null=True, blank=True)
     date = models.DateField()
     pressure_systolic = models.CharField(max_length=20, null=True, blank=True) # Top mm/Hg
     pressure_diastolic = models.CharField(max_length=20, null=True, blank=True) # Top mm/Hg

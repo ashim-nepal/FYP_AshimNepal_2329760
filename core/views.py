@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews, Prescriptions
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -1401,6 +1401,89 @@ def update_appointment_status(request):
 
 
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+def get_prescription(request, appointment_id):
+    try:
+        appointment = Appointments.objects.get(id=appointment_id)
+        # prescription = Prescriptions.objects.filter(patient=appointment.patient, doctor=appointment.doctor, date=appointment.appointment_date).first()
+        prescription = Prescriptions.objects.filter(appointment_id=appointment.id).first()
+        patient = get_object_or_404(Patients, email=appointment.patient)
+
+        if prescription:
+            return JsonResponse({"prescription": {
+                "id": str(prescription.id),
+                "blood_pressure_sys": prescription.pressure_systolic,
+                "blood_pressure_dias": prescription.pressure_diastolic,
+                "diabetes": prescription.diabetes,
+                "medication": prescription.medication,
+                "notes": prescription.notes,
+                "date": appointment.appointment_date,
+                "time": appointment.appointment_time,
+                "patient_name": patient.name,
+                "patient_email": patient.email
+            }})
+        else:
+            return JsonResponse({"prescription": None})
+    
+    except Appointments.DoesNotExist:
+        return JsonResponse({"error": "Appointment not found"}, status=404)
+
+
+
+
+
+@csrf_exempt
+def save_prescription(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+
+        appointment = Appointments.objects.get(id=data['appointment_id'])
+        prescription, created = Prescriptions.objects.update_or_create(
+            
+            patient=appointment.patient,
+            doctor=appointment.doctor,
+            date=appointment.appointment_date,
+            defaults={
+                "appointment_id" : data.get("appointment_id", ""),
+                "pressure_systolic": data.get("blood_pressure_systolic", ""),
+                "pressure_diastolic": data.get("blood_pressure_diastolic", ""),
+                "diabetes": data.get("diabetes", ""),
+                "medication": data.get("medication", ""),
+                "notes": data.get("notes", ""),
+            }
+        )
+
+        return JsonResponse({"message": "Prescription saved successfully!"})
+    
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+
+
+
+@csrf_exempt
+def manage_prescription(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        doctor = get_object_or_404(Doctors, email=data["doctor_email"])
+        patient = get_object_or_404(Patients, email=data["patient_email"])
+        prescription, created = Prescriptions.objects.get_or_create(
+            doctor=doctor, patient=patient, date=data["date"]
+        )
+
+        prescription.blood_pressure = data.get("blood_pressure", prescription.blood_pressure)
+        prescription.diabetes = data.get("diabetes", prescription.diabetes)
+        prescription.medication = data.get("medication", prescription.medication)
+        prescription.notes = data.get("notes", prescription.notes)
+        prescription.save()
+
+        return JsonResponse({"message": "Prescription saved successfully!"}, status=200)
+    
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
 
 
 

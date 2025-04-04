@@ -135,8 +135,6 @@
 <div id="appointmentDialogue" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex justify-center items-center">
   <div class="bg-white w-180 p-6 rounded-lg shadow-lg">
       <h3 class="text-xl font-bold mb-4">My Upcoming Appointments</h3>
-      <input type="text" id="searchEmail" placeholder="Search by patient email">
-      <button onclick="searchPatient()">Search</button>
       <table class="w-full bg-gray-100 border">
         <thead>
             <tr class="text-gray-700">
@@ -153,6 +151,39 @@
   </div>
 </div>
 
+<!-- Prescription Modal -->
+<div id="prescriptionModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-900 bg-opacity-50">
+  <div class="bg-white w-1000 p-6 rounded-lg">
+      <h2 class="text-xl font-bold mb-4 text-center">Prescription</h2>
+
+      <form id="prescriptionForm">
+        <div id="prescription-info">
+        </div>
+          <input type="hidden" id="prescriptionId">
+          <input type="hidden" id="appointmentId">
+          
+          <label class="block font-semibold">Blood Pressure(Systolic):</label>
+          <input type="float" id="bloodPressure-sys" class="w-full p-2 border rounded-md mb-2 required"><span>mm/Hg</span>
+
+          <label class="block font-semibold">Blood Pressure(Diastolic):</label>
+          <input type="float" id="bloodPressure-dias" class="w-full p-2 border rounded-md mb-2 required"><span>mm/Hg</span>
+
+          <label class="block font-semibold">Diabetes:</label>
+          <input type="float" id="diabetes" class="w-full p-2 border rounded-md mb-2 required">
+
+          <label class="block font-semibold">Medication:</label>
+          <textarea id="medication" class="w-full p-2 border rounded-md mb-2 required"></textarea>
+
+          <label class="block font-semibold">Notes:</label>
+          <textarea id="notes" class="w-full p-2 border rounded-md mb-2 required"></textarea>
+
+          <div class="flex justify-end mt-4">
+              <button type="button" id="closeModal" class="px-4 py-2 bg-gray-500 text-white rounded-md mr-2">Cancel</button>
+              <button type="submit" class="px-4 py-2 bg-[#29622E] text-white rounded-md">Save Prescription</button>
+          </div>
+      </form>
+  </div>
+</div>
 
 
 
@@ -362,7 +393,7 @@
                       <td class="px-4 py-2">${appointment.appointment_date}</td>
                       <td class="px-4 py-2">${appointment.appointment_time}</td>
                       <td class="px-4 py-2">
-                        <button onclick="openPrescription('${appointment.patient_email}', '${appointment.appointment_date}')" 
+                        <button onclick="openPrescription('${appointment.id}', '${appointment.appointment_date}')" 
                           style="background: none; border: none;">
                           📄📄📄📄
                         </button>
@@ -388,6 +419,8 @@ function updateStatus(appointment_id, status) {
     .then(() => location.reload());
 }
 
+
+/*
 function openPrescription(patient_email, date) {
     fetch('/manage-prescription/', { 
         method: "POST", 
@@ -396,6 +429,92 @@ function openPrescription(patient_email, date) {
     })
     .then(() => alert("Prescription opened"));
 }
+*/
+
+function openPrescription(appointmentId) {
+  document.getElementById('appointmentId').value = appointmentId;
+  
+  // Fetch prescription details if exists
+  fetch(`/get_prescription/${appointmentId}/`)
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+          if (data.prescription) {
+              document.getElementById('prescriptionId').value = data.prescription.id;
+              document.getElementById('bloodPressure-sys').value = data.prescription.blood_pressure_sys || "";
+              document.getElementById('bloodPressure-dias').value = data.prescription.blood_pressure_dias || "";
+              document.getElementById('diabetes').value = data.prescription.diabetes || "";
+              document.getElementById('medication').value = data.prescription.medication || "";
+              document.getElementById('notes').value = data.prescription.notes || "";
+          }
+          document.getElementById('prescription-info').innerHTML = `
+
+          <span>Patients detail</span>
+          <h4>${data.prescription.patient_name}</h4>
+          ${data.prescription.date} | ${data.prescription.time}
+
+          `;
+      });
+
+  document.getElementById('prescriptionModal').classList.remove('hidden');
+  
+}
+
+document.getElementById('closeModal').addEventListener('click', () => {
+  document.getElementById('prescriptionModal').classList.add('hidden');
+  document.getElementById('prescriptionId').value = "";
+  document.getElementById('bloodPressure-sys').value ="";
+  document.getElementById('bloodPressure-dias').value ="";
+  document.getElementById('diabetes').value ="";
+  document.getElementById('medication').value ="";
+  document.getElementById('notes').value ="";
+  document.getElementById('prescription-info').value = ``;
+});
+
+document.getElementById('prescriptionForm').addEventListener('submit', function (event) {
+  event.preventDefault();
+  
+  const prescriptionData = {
+      id: document.getElementById('prescriptionId').value,
+      appointment_id: document.getElementById('appointmentId').value,
+      blood_pressure_systolic: document.getElementById('bloodPressure-sys').value,
+      blood_pressure_diastolic: document.getElementById('bloodPressure-dias').value,
+      diabetes: document.getElementById('diabetes').value,
+      medication: document.getElementById('medication').value,
+      notes: document.getElementById('notes').value
+  };
+  console.log(prescriptionData);
+
+  fetch('/save_prescription/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+      body: JSON.stringify(prescriptionData)
+  })
+  .then(response => response.json())
+  .then(data => {
+      alert(data.message);
+      document.getElementById('prescriptionModal').classList.add('hidden');
+  })
+  .catch(error => console.error('Error:', error));
+});
+
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i].trim();
+          if (cookie.startsWith(name + '=')) {
+              cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+              break;
+          }
+      }
+  }
+  return cookieValue;
+}
+
+
 
 function searchPatient() {
     let email = document.getElementById("searchEmail").value;
