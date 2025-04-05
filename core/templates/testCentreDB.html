@@ -16,17 +16,270 @@
 
     <!-- Main Grid -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="space-y-6">
+            <!-- Pending -->
+            <div id="pendingBox" class="bg-white border border-black p-4 rounded-lg">
+                <h2 class="text-lg font-bold text-green-700 mb-4">Pending Approvals</h2>
+                <input type="text" placeholder="Search by email" oninput="filterRecords('pendingBox')" class="mb-2 w-full p-2 border rounded" />
+                <input type="date" oninput="filterRecords('pendingBox')" class="mb-4 w-full p-2 border rounded" />
+                <div id="pendingBox-records" class="space-y-3 overflow-auto h-48"></div>
+            </div>
+
+            <!-- Approved -->
+            <div id="approvedBox" class="bg-white border border-black p-4 rounded-lg">
+                <h2 class="text-lg font-bold text-green-700 mb-4">Approved Tests (Update Status)</h2>
+                <input type="text" placeholder="Search by email" oninput="filterRecords('approvedBox')" class="mb-2 w-full p-2 border rounded" />
+                <input type="date" oninput="filterRecords('approvedBox')" class="mb-4 w-full p-2 border rounded" />
+                <div id="approvedBox-records" class="space-y-3 overflow-auto h-48"></div>
+            </div>
+        </div>
+
+        <!-- Completed -->
+        <div id="completedBox" class="bg-white border border-black p-4 rounded-lg">
+            <h2 class="text-lg font-bold text-green-700 mb-4">Completed Tests (Upload Report)</h2>
+            <input type="text" placeholder="Search by email" oninput="filterRecords('completedBox')" class="mb-2 w-full p-2 border rounded" />
+            <input type="date" oninput="filterRecords('completedBox')" class="mb-4 w-full p-2 border rounded" />
+            <div id="completedBox-records" class="space-y-3 overflow-auto h-48"></div>
+        </div>
+    </div>
+
+    <br><br>
+    <button onclick="toggleModal()" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-900">View Past Logs</button>
+
+    <!-- Modal -->
+    <div id="logModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+        <div class="bg-white w-full max-w-3xl rounded-xl shadow-xl p-6 relative">
+            <button onclick="toggleModal()" class="absolute top-3 right-3 text-xl">❌</button>
+            <h3 class="text-xl font-bold mb-4">Past Test Logs</h3>
+            <input type="text" placeholder="Search by email" oninput="filterRecords('pastBox')" class="mb-2 w-full p-2 border rounded" />
+            <input type="date" oninput="filterRecords('pastBox')" class="mb-4 w-full p-2 border rounded" />
+            <div id="pastBox-records" class="space-y-2 max-h-[400px] overflow-y-auto"></div>
+        </div>
+    </div>
+
+<script>
+    async function fetchAppointments() {
+        const response = await fetch("/api/get-tc-appointments/");
+        const data = await response.json();
+
+        const filteredData = data.appointments.filter(app => app.test_department === "{{testcnt_email}}");
+
+        const boxes = {
+            "Pending": document.getElementById("pendingBox-records"),
+            "Approved": document.getElementById("approvedBox-records"),
+            "Sample Collected": document.getElementById("approvedBox-records"),
+            "Processing": document.getElementById("approvedBox-records"),
+            "Completed": document.getElementById("completedBox-records"),
+        };
+
+        for (let box of Object.values(boxes)) box.innerHTML = "";
+        console.log(filteredData);
+
+        filteredData.forEach(app => {
+            const div = document.createElement("div");
+            div.className = "border p-3 rounded-lg";
+            div.setAttribute("data-email", app.patient.toLowerCase());
+            div.setAttribute("data-date", app.booking_date);
+
+            div.innerHTML = `
+                <p class="font-semibold text-green-700">${app.booking_date}</p>
+                <p>${app.patient} | ${app.test_department}</p>
+            `;
+
+            if (app.status === "Pending") {
+                div.innerHTML += `
+                    <button class="bg-green-700 text-white px-2 py-1 rounded-lg approve-btn" data-id="${app.id}">Approve</button>
+                    <button class="bg-red-700 text-white px-2 py-1 rounded-lg reject-btn" data-id="${app.id}">Reject</button>
+                `;
+            }
+
+            if (["Approved", "Sample Collected", "Processing"].includes(app.status)) {
+                div.innerHTML += `
+                    <select class="border px-2 py-1 rounded-lg status-dropdown" data-id="${app.id}">
+                        <option value="Approved" ${app.status === "Approved" ? "selected" : ""}>Approved</option>
+                        <option value="Sample Collected" ${app.status === "Sample Collected" ? "selected" : ""}>Sample Collected</option>
+                        <option value="Processing" ${app.status === "Processing" ? "selected" : ""}>Processing</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                `;
+            }
+
+            if (app.status === "Completed") {
+                div.innerHTML += `
+                    <button class="bg-blue-700 text-white px-2 py-1 rounded-lg upload-btn" data-id="${app.id}">Upload Report</button>
+                `;
+            }
+
+            boxes[app.status]?.appendChild(div);
+        });
+
+        attachEventListeners();
+    }
+
+    function attachEventListeners() {
+        document.querySelectorAll(".approve-btn").forEach(btn => {
+            btn.onclick = async function () {
+                const id = this.dataset.id;
+                await fetch("/api/update-tc-status/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id, status: "Approved" }),
+                });
+                fetchAppointments();
+            };
+        });
+
+        document.querySelectorAll(".reject-btn").forEach(btn => {
+            btn.onclick = async function () {
+                const id = this.dataset.id;
+                const reason = prompt("Enter rejection reason:");
+                await fetch("/api/reject-test-req/", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id, reason }),
+                });
+                fetchAppointments();
+            };
+        });
+
+        document.querySelectorAll(".status-dropdown").forEach(select => {
+            select.onchange = async function () {
+                const id = this.dataset.id;
+                const status = this.value;
+                if (confirm(`Change status to ${status}?`)) {
+                    await fetch("/api/update-tc-status/", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ id, status }),
+                    });
+                    fetchAppointments();
+                }
+            };
+        });
+
+        document.querySelectorAll(".upload-btn").forEach(btn => {
+            btn.onclick = function () {
+                const id = this.dataset.id;
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".pdf";
+                input.onchange = async function () {
+                    const file = input.files[0];
+                    if (!file) return;
+                    const formData = new FormData();
+                    formData.append("id", id);
+                    formData.append("report_file", file);
+                    await fetch("/api/send-test-report/", { method: "POST", body: formData });
+                    alert("Report uploaded and email sent!");
+                    fetchAppointments();
+                };
+                input.click();
+            };
+        });
+    }
+
+    function filterRecords(boxId) {
+        const email = document.querySelector(`#${boxId} input[type="text"]`).value.toLowerCase();
+        const date = document.querySelector(`#${boxId} input[type="date"]`).value;
+        const list = document.getElementById(`${boxId}-records`);
+        console.log(list);
+        [...list.children].forEach(el => {
+            const matchEmail = el.dataset.email.includes(email);
+            const matchDate = !date || el.dataset.date === date;
+            el.style.display = matchEmail && matchDate ? "block" : "none";
+        });
+    }
+
+    function toggleModal() {
+        const modal = document.getElementById("logModal");
+        modal.classList.toggle("hidden");
+        if (!modal.classList.contains("hidden")) renderRecords("pastBox");
+    }
+
+    async function renderRecords(boxId) {
+        const response = await fetch("/api/get-tc-appointments/");
+        const data = await response.json();
+        const container = document.getElementById(`${boxId}-records`);
+        container.innerHTML = "";
+
+        const records = data.appointments.filter(app =>
+            ["Cancelled", "Completion Notified"].includes(app.status)
+        ).sort((a, b) => new Date(b.booking_date) - new Date(a.booking_date));
+
+        records.forEach(app => {
+            const div = document.createElement("div");
+            div.className = "border p-2 rounded";
+            div.setAttribute("data-email", app.patient.toLowerCase());
+            div.setAttribute("data-date", app.booking_date);
+            div.innerHTML = `
+                <p class="text-green-700">${app.booking_date}</p>
+                <p>${app.patient} - ${app.status}</p>
+                ${app.report_file ? `<a href="${app.report_file}" target="_blank" class="text-blue-600 underline">View Report</a>` : ""}
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function confirmLogout() {
+        if (confirm("Are you sure you want to logout?")) {
+            window.location.href = "/logout/";
+        }
+    }
+
+    fetchAppointments();
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+{% comment %} <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CT Scan Centre</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6 border-b-2 pb-2 border-black">
+        <h1 class="text-2xl font-bold text-green-700">Test Centre</h1>
+        <button onclick="confirmLogout()" class="text-green-700 font-semibold">Logout</button>
+    </div>
+
+    <!-- Main Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Left Section: Pending/Approved Tests -->
         <div class="space-y-6">
             <!-- Pending Approvals -->
             <div class="bg-white border border-black p-4 rounded-lg">
                 <h2 class="text-lg font-bold text-green-700 mb-4">Pending Approvals</h2>
+                <input type="text" placeholder="Search by email" oninput="filterRecords('pendingBox')" class="mb-2 w-full p-2 border rounded" />
+                <input type="date" oninput="filterRecords('pendingBox')" class="mb-4 w-full p-2 border rounded" />
                 <div id="pending-list" class="space-y-3 overflow-auto h-48"></div>
             </div>
 
             <!-- Approved Tests -->
             <div class="bg-white border border-black p-4 rounded-lg">
                 <h2 class="text-lg font-bold text-green-700 mb-4">Approved Tests (Update Status)</h2>
+                <input type="text" placeholder="Search by email" oninput="filterRecords('approvedBox')" class="mb-2 w-full p-2 border rounded" />
+                <input type="date" oninput="filterRecords('approvedBox')" class="mb-4 w-full p-2 border rounded" />
                 <div id="approved-status-list" class="space-y-3 overflow-auto h-48"></div>
             </div>
         </div>
@@ -34,9 +287,31 @@
         <!-- Right Section: Completed Reports -->
         <div class="bg-white border border-black p-4 rounded-lg">
             <h2 class="text-lg font-bold text-green-700 mb-4">Completed Tests (Upload Report)</h2>
+            <input type="text" placeholder="Search by email" oninput="filterRecords('completedBox')" class="mb-2 w-full p-2 border rounded" />
+            <input type="date" oninput="filterRecords('completedBox')" class="mb-4 w-full p-2 border rounded" />
             <div id="completed-list" class="space-y-3 overflow-auto h-48"></div>
         </div>
     </div>
+    <br>
+    <br>
+    <button onclick="toggleModal()" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-900">
+        View Past Logs
+      </button>
+
+        <!-- Modal -->
+  <div id="logModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white w-full max-w-3xl rounded-xl shadow-xl p-6 relative">
+      <button onclick="toggleModal()" class="absolute top-3 right-3 text-xl">✖️</button>
+      <h3 class="text-xl font-bold mb-4">Past Test Logs</h3>
+      <input type="text" placeholder="Search by email" oninput="filterRecords('pastBox')" class="mb-2 w-full p-2 border rounded" />
+      <input type="date" oninput="filterRecords('pastBox')" class="mb-4 w-full p-2 border rounded" />
+      <div id="pastBox-records" class="space-y-2 max-h-[400px] overflow-y-auto">
+        <!-- Injected past records -->
+      </div>
+    </div>
+  </div>
+
+
 
     <script>
         async function fetchAppointments() {
@@ -55,7 +330,7 @@
             );
             console.log(filteredData);
 
-            filteredData.appointments.forEach(app => {
+            filteredData.forEach(app => {
                 let div = document.createElement("div");
                 div.className = "border p-3 rounded-lg";
                 div.innerHTML = `
@@ -158,6 +433,26 @@
 
         fetchAppointments();
 
+
+        function filterRecords(boxId) {
+            const emailInput = document.querySelector(`#${boxId} input[type="text"]`);
+            const dateInput = document.querySelector(`#${boxId} input[type="date"]`);
+            const emailValue = emailInput.value.toLowerCase();
+            const dateValue = dateInput.value;
+      
+            const container = document.getElementById(`${boxId}-records`);
+            for (const item of container.children) {
+              const matchesEmail = item.dataset.email.includes(emailValue);
+              const matchesDate = dateValue ? item.dataset.date === dateValue : true;
+              item.style.display = matchesEmail && matchesDate ? "block" : "none";
+            }
+          }
+
+          function toggleModal() {
+            document.getElementById("logModal").classList.toggle("hidden");
+            renderRecords("pastBox");
+          }
+
         // Confirm Logout
   function confirmLogout() {
     if (confirm("Are you sure you want to logout?")) {
@@ -168,195 +463,4 @@
 
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-{% comment %} 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CT Scan Centre</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="bg-gray-100 p-6">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6 border-b-2 pb-2 border-black">
-        <h1 class="text-2xl font-bold text-green-700">CT Scan Centre</h1>
-        <a href="#" class="text-green-700 font-semibold">Logout</a>
-    </div>
-
-    <!-- Main Grid Container -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Left Section (Status + Completed Tests) -->
-        <div class="space-y-6">
-            <!-- Reservation Status -->
-            <div class="bg-white border border-black p-4 rounded-lg">
-                <h2 class="text-lg font-bold text-green-700 mb-4">Reservation Status</h2>
-                <div class="space-y-3">
-                    <!-- Dummy Data -->
-                    <div class="border p-3 rounded-lg">
-                        <p class="font-semibold text-green-700">28-11-2024, 13:30</p>
-                        <p>Patient Name | P. No: 123456</p>
-                        <select class="w-full border p-2 rounded mt-2">
-                            <option>Booked</option>
-                            <option>Sample Collected</option>
-                            <option>Processing Report</option>
-                            <option>Completed</option>
-                        </select>
-                    </div>
-                    <div class="border p-3 rounded-lg">
-                        <p class="font-semibold text-green-700">28-11-2024, 13:45</p>
-                        <p>Patient Name | P. No: 123457</p>
-                        <select class="w-full border p-2 rounded mt-2">
-                            <option>Booked</option>
-                            <option>Sample Collected</option>
-                            <option>Processing Report</option>
-                            <option>Completed</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Tests Completed (Email Unsent) -->
-            <div class="bg-white border border-black p-4 rounded-lg">
-                <h2 class="text-lg font-bold text-green-700 mb-4">Tests Completed (Pending Email)</h2>
-                <div class="space-y-3">
-                    <div class="border p-3 rounded-lg cursor-pointer">
-                        <p class="font-semibold text-green-700">28-11-2024, 14:00</p>
-                        <p>Patient Name | P. No: 123458</p>
-                    </div>
-                    <div class="border p-3 rounded-lg cursor-pointer">
-                        <p class="font-semibold text-green-700">28-11-2024, 14:15</p>
-                        <p>Patient Name | P. No: 123459</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Right Section (File Upload) -->
-        <div class="bg-white border border-black p-4 rounded-lg">
-            <h2 class="text-lg font-bold text-green-700 mb-4">Upload Report</h2>
-            <div class="mb-4 border p-3 rounded-lg">
-                <p class="font-semibold text-green-700">Selected Patient:</p>
-                <p>Patient Name | P. No: -</p>
-            </div>
-            <div class="flex flex-col items-center border border-dashed p-6 rounded-lg">
-                <img src="https://cdn-icons-png.flaticon.com/512/337/337946.png" alt="File" class="w-16 h-16">
-                <input type="file" id="report-file" class="hidden">
-                <label for="report-file" class="cursor-pointer text-green-700 mt-2">Attach File</label>
-            </div>
-            <button class="bg-green-700 text-white px-4 py-2 rounded-lg shadow-md mt-4 w-full">Send</button>
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener("DOMContentLoaded", async function () {
-            // Fetch appointments dynamically
-            async function fetchAppointments() {
-                try {
-                    let response = await fetch("/api/get-appointments/");
-                    let data = await response.json();
-
-                    let appointmentList = document.getElementById("appointment-list");
-                    appointmentList.innerHTML = "";
-                    data.appointments.forEach(appointment => {
-                        let div = document.createElement("div");
-                        div.className = "border p-3 rounded-lg";
-                        div.innerHTML = `
-                            <p class="font-semibold text-green-700">${appointment.time}</p>
-                            <p>Patient Name | ID: ${appointment.patient_id}</p>
-                            <select class="w-full border p-2 rounded mt-2 status-dropdown" data-id="${appointment.id}">
-                                <option ${appointment.status === "Booked" ? "selected" : ""}>Booked</option>
-                                <option ${appointment.status === "Sample Collected" ? "selected" : ""}>Sample Collected</option>
-                                <option ${appointment.status === "Processing Report" ? "selected" : ""}>Processing Report</option>
-                                <option ${appointment.status === "Completed" ? "selected" : ""}>Completed</option>
-                            </select>
-                        `;
-                        appointmentList.appendChild(div);
-                    });
-
-                    // Update status on change
-                    document.querySelectorAll(".status-dropdown").forEach(select => {
-                        select.addEventListener("change", async function () {
-                            let appointmentId = this.getAttribute("data-id");
-                            let newStatus = this.value;
-
-                            await fetch("/api/update-status/", {
-                                method: "POST",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ id: appointmentId, status: newStatus })
-                            });
-                        });
-                    });
-                } catch (error) {
-                    console.error("Error fetching appointments:", error);
-                }
-            }
-
-            // Fetch completed tests dynamically
-            async function fetchCompletedTests() {
-                try {
-                    let response = await fetch("/api/get-completed-tests/");
-                    let data = await response.json();
-
-                    let completedTestsDiv = document.getElementById("completed-tests");
-                    completedTestsDiv.innerHTML = "";
-                    data.completed_tests.forEach(test => {
-                        let div = document.createElement("div");
-                        div.className = "border p-3 rounded-lg cursor-pointer completed-test";
-                        div.setAttribute("data-id", test.id);
-                        div.innerHTML = `
-                            <p class="font-semibold text-green-700">${test.time}</p>
-                            <p>Patient Name | ID: ${test.patient_id}</p>
-                        `;
-                        completedTestsDiv.appendChild(div);
-                    });
-
-                    // On Click, Load Patient Data
-                    document.querySelectorAll(".completed-test").forEach(div => {
-                        div.addEventListener("click", function () {
-                            let patientInfo = document.getElementById("selected-patient");
-                            patientInfo.innerHTML = div.innerHTML;
-                        });
-                    });
-                } catch (error) {
-                    console.error("Error fetching completed tests:", error);
-                }
-            }
-
-            // Send Report
-            document.getElementById("send-report").addEventListener("click", async function () {
-                let fileInput = document.getElementById("report-file");
-                if (fileInput.files.length === 0) {
-                    alert("Please select a file.");
-                    return;
-                }
-
-                let formData = new FormData();
-                formData.append("report_file", fileInput.files[0]);
-
-                await fetch("/api/send-report/", {
-                    method: "POST",
-                    body: formData
-                });
-
-                alert("Report sent successfully!");
-            });
-
-            // Initial Fetch
-            await fetchAppointments();
-            await fetchCompletedTests();
-        });
-    </script>
-
-</body>
-</html> {% endcomment %}
+ {% endcomment %}
