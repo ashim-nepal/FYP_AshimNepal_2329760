@@ -17,7 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Avg, Count
 from django.utils.dateparse import parse_date
-from django.core.mail import send_mail
+from django.core.mail import send_mail, EmailMessage
 from django.conf import settings
 from django.utils.html import strip_tags
 from django.utils.dateparse import parse_time
@@ -89,7 +89,21 @@ def doctorProfilePage(request):
     return render(request,"myProfileDoctor.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'doctor': doctor_val})
     
 def testCentreDB(request):
-    return render(request, 'testCentreDB.html')    
+    
+    if not request.session.get('is_authenticated'):
+        return redirect('/login/')
+    
+    if request.session.get('user_role') != 'testcentre':
+        return redirect('/login/')
+    
+    
+    user_email = request.session.get('user_email')
+    print(user_email)
+    
+    return render(request, 'testCentreDB.html', {'testcnt_email':user_email})  
+
+
+  
 
 def adminDB(request):
     if not request.session.get('is_authenticated'):
@@ -1560,7 +1574,85 @@ def book_test(request):
 
 
 
+# Fetch Appointments
+def get_tc_appointments(request):
+    appointments = TestBooking.objects.all().values()
+    return JsonResponse({"appointments": list(appointments)})
 
+
+
+
+# Update Test Status
+@csrf_exempt
+def update_tc_status(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        test_id = data.get("id")
+        new_status = data.get("status")
+        
+        test = get_object_or_404(TestBooking, id=test_id)
+        test.status = new_status
+        test.save()
+
+        # Send Email Notification on Status Change
+        send_mail(
+            subject=f"Test Status Updated to {new_status}",
+            message=f"Dear Patient,\nYour test status has been updated to: {new_status}",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[test.patient],
+            fail_silently=True,
+        )
+
+        return JsonResponse({"message": "Status updated successfully!"})
+    
+    
+    # Handle Rejection
+@csrf_exempt
+def reject_test_request(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        test_id = data.get("id")
+        rejection_reason = data.get("reason")
+        
+        test = get_object_or_404(TestBooking, id=test_id)
+        test.status = "Rejected"
+        test.save()
+
+        # Send Email Notification on Rejection
+        send_mail(
+            subject="Test Booking Rejected",
+            message=f"Dear Patient,\nYour test booking has been rejected. Reason: {rejection_reason}",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[test.patient],
+            fail_silently=True,
+        )
+
+        return JsonResponse({"message": "Test rejected and email sent!"})
+    
+    
+    # Handle Report Upload
+@csrf_exempt
+def send_test_report(request):
+    if request.method == "POST" and request.FILES.get("report_file"):
+        test_id = request.POST.get("id")
+        test = get_object_or_404(TestBooking, id=test_id)
+        report_file = request.FILES["report_file"]
+
+        if 'report_file' in request.FILES:
+            test.test_report = request.FILES['report_file']
+            test.status = "Completion Notified"
+            test.save()
+
+            # Email the Report
+            subject = "Your Test Report is Ready"
+            message = f"Dear patient,\n\nYour test report is ready. Please find the attached file."
+            email = EmailMessage(subject, message, settings.EMAIL_HOST_USER, [test.patient])
+            email.attach(report_file.name, report_file.read(), report_file.content_type)
+            email.send()
+
+            return JsonResponse({"message": "Report uploaded and email sent!"})
+
+        return JsonResponse({"error": "No file uploaded"}, status=400)
 
 
 

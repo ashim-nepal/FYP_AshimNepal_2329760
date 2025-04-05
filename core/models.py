@@ -272,6 +272,7 @@ class TestBooking(models.Model):
         ('Sample Collected', 'Sample Collected'),
         ('Processing', 'Processing'),
         ('Completed', 'Completed'),
+        ('Completion Notified', 'Completion Notified'),
         ('Cancelled', 'Cancelled'),
         ('Rejected', 'Rejected'),
     ]

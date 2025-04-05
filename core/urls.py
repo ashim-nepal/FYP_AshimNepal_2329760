@@ -75,6 +75,10 @@ urlpatterns = [
     # Test Centres
     path("test-centres/<str:centre_email>/", views.test_centres, name="test_centres"),
     path("api/book-test-appointment/", views.book_test, name="book_test"),
+    path("api/get-tc-appointments/", views.get_tc_appointments, name="get_appointments"),
+    path("api/update-tc-status/", views.update_tc_status, name="update_status"),
+    path("api/reject-test-req/", views.reject_test_request, name="reject_test"),
+    path("api/send-test-report/", views.send_test_report, name="send_report"),
     
     # Health Packages
     path("health-package/<uuid:package_id>/", views.health_packages, name="health_packages"),
