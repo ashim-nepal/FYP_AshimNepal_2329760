@@ -12,6 +12,7 @@ urlpatterns = [
     path('logout/',views.logout_view, name='logout'),
     path('docProfile/<str:doctor_email>/', views.doc_profile, name="doc_profile"),
     path('patientProfile/', views.patientProfile, name='patientProfile'),
+    path('viewPatientProfile/<str:patient_email>/',views.view_patientProfile, name='view_patientProfile'),
     path('adminDB/', views.adminDB, name='adminDB'),
     path('masterAdminDB/', views.masterAdmin, name='masterAdminDB'),
     path('receptionDB/', views.receptionDB, name='receptionistDB'),

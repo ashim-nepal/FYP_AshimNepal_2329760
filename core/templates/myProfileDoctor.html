@@ -343,7 +343,7 @@
           filteredAppointments.forEach((appointment) => {
               let row = `
                   <tr class="border-b">
-                      <td class="px-4 py-2">${appointment.patient_email}</td>
+                      <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/"> ${appointment.patient_email}</a></td>
                       <td class="px-4 py-2">${appointment.appointment_date}</td>
                       <td class="px-4 py-2">${appointment.appointment_time}</td>
                       <td class="px-4 py-2">${appointment.is_emergency ? "🚨 Emergency" : "Regular"}</td>
@@ -426,7 +426,7 @@
                 
                 content += `
                       <tr class="border-b">
-                      <td class="px-4 py-2">${appointment.patient_email}</td>
+                      <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/">${appointment.patient_email}</a></td>
                       <td class="px-4 py-2">${appointment.appointment_date}</td>
                       <td class="px-4 py-2">${appointment.appointment_time}</td>
                       <td class="px-4 py-2">
@@ -515,7 +515,7 @@ function displayAppointments(appointments) {
 
           content += `
               <tr class="border-b">
-                  <td class="px-4 py-2">${appointment.patient_email}</td>
+                  <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/">${appointment.patient_email}</a></td>
                   <td class="px-4 py-2">${appointment.appointment_date}</td>
                   <td class="px-4 py-2">${appointment.appointment_time}</td>
                   <td class="px-4 py-2">

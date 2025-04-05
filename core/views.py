@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-import json, uuid, datetime
+import json, uuid, datetime, io, string, random
 from datetime import datetime, timedelta, date
 from .serializers import HospitalBranchSerializer, UserSerializer, DoctorAvailabilitySerializer, AppointmentSerializer
 from django.http import JsonResponse, HttpResponse
@@ -22,6 +22,8 @@ from django.conf import settings
 from django.utils.html import strip_tags
 from django.utils.dateparse import parse_time
 from django.core.files.base import ContentFile
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import A4
 
 
 # Create your views here.
@@ -102,7 +104,32 @@ def testCentreDB(request):
     
     return render(request, 'testCentreDB.html', {'testcnt_email':user_email})  
 
+def view_patientProfile(request, patient_email):
+    if not request.session.get('is_authenticated'):
+        return redirect('/login/')
+    
+    if request.session.get('user_role') != 'doctor':
+        return redirect('/login/')  # Prevent unauthorized access
+    
+    user_email = patient_email
+    
+    #Get admin details from session
+    patient = Users.objects.get(email=user_email)
 
+    # Get hospital name based on admin's branch_id
+    hospital_name = "Unknown Hospital"
+    if patient.branch:
+        branch = HospitalBranches.objects.get(branch_code=patient.branch.branch_code)
+        hospital_name = branch.branch_name  # Fetch the hospital name
+        hospital_branch = branch.branch_code
+        try:
+            patient_val = Patients.objects.get(email=user_email)
+        except Patients.DoesNotExist:
+            patient_val = None
+        
+        patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
+        print(patient_val.assigned_doctors_data)
+    return render(request,"viewPatientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val})
   
 
 def adminDB(request):
@@ -1712,8 +1739,39 @@ def book_health_package(request):
             booking = HealthPackageBookings.objects.create(
                 test=health_package, patient=patient.email, branch=branch, test_date=test_date_obj, status="Pending"
             )
+            
+            keyword = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+            
+             # Generate PDF
+            buffer = io.BytesIO()
+            p = canvas.Canvas(buffer, pagesize=A4)
+            p.setFont("Helvetica-Bold", 16)
+            p.drawString(100, 820, "Health Package Receipt")
+            p.setFont("Helvetica", 12)
+            p.drawString(100, 790, f"Patient Name: {patient.name}")
+            p.drawString(100, 770, f"Patient Email: {patient.email}")
+            p.drawString(100, 750, f"Package: {health_package.name}")
+            p.drawString(100, 730, f"Appointment Date: {test_date_obj}")
+            p.drawString(100, 710, f"Amount Paid: Rs. {health_package.price}")
+            p.drawString(100, 690, f"Receipt Code: {keyword}")
+            p.drawString(100, 640, f"'Thankyou for choosing syncHealth!'")
+            p.showPage()
+            p.save()
 
-            return JsonResponse({"message": "Booking successful!", "booking_id": str(booking.id)})
+            buffer.seek(0)
+            pdf_data = buffer.getvalue()
+            buffer.close()
+            
+            # Send Email
+            email = EmailMessage(
+                "Your Health Package Receipt",
+                "Please find attached your receipt for the health package booked.\n\nYou need to show it on reception to be escorted further.",
+                to=[patient.email]
+            )
+            email.attach(f"Receipt_{keyword}.pdf", pdf_data, "application/pdf")
+            email.send()
+
+            return JsonResponse({"message": "Booking successful! Your receipt has been mailed to you!", "booking_id": str(booking.id)})
 
         except json.JSONDecodeError:
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
