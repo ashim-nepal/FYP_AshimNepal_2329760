@@ -92,6 +92,10 @@ urlpatterns = [
     path("api/update-password/", views.update_password),
     path("api/send-reset-password/", views.send_reset_password),
     path("api/forgotten-reset-password/", views.reset_forgotten_password, name="reset_password_submit"),
+    # PAtient vews graph and records
+    path('api/prescriptions/<str:patient_email>/', views.prescriptions_view),
+    path('api/patient-history/<str:patient_email>/', views.patient_history),
+    path("api/patient-records/<str:patient_email>/", views.get_detailed_patient_records),
     
     
     # path('create-user/', create_user_view, name='create-user')

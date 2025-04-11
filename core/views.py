@@ -28,7 +28,7 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import default_token_generator
-from django.contrib.auth import authenticate, update_session_auth_hash
+from django.core.serializers.json import DjangoJSONEncoder
 
 
 # Create your views here.
@@ -63,7 +63,7 @@ def patientProfile(request):
         
         patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
         print(patient_val.assigned_doctors_data)
-    return render(request,"patientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val})
+    return render(request,"patientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val,  'patient_image':patient.profile_pic})
 
 
 def doctorProfilePage(request):
@@ -134,7 +134,7 @@ def view_patientProfile(request, patient_email):
         
         patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
         print(patient_val.assigned_doctors_data)
-    return render(request,"viewPatientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val})
+    return render(request,"viewPatientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val, 'patient_image':patient.profile_pic})
   
 
 def adminDB(request):
@@ -954,7 +954,7 @@ def add_patient(request):
                 return JsonResponse({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
 
             # Auto-generate patient number
-            current_year = datetime.datetime.now().year
+            current_year = datetime.now().year
             last_patient = Patients.objects.filter(patient_no__startswith=str(current_year)).order_by("-created_at").first()
             if last_patient:
                 last_patient_no = int(last_patient.patient_no[-6:])  # Extract last 6 digits
@@ -969,7 +969,7 @@ def add_patient(request):
             assigned_doctors = []
             for doc_id in doctor_ids:
                 doctor = Doctors.objects.get(id=doc_id)  # Fetch doctor by ID
-                assigned_doctors.append({"email": doctor.email, "name": doctor.name})  # Store required fields
+                assigned_doctors.append({"email": doctor.email, "name": doctor.name, "nmc":doctor.nmc_registration})  # Store required fields
 
 
             # Transaction ensures data integrity across both tables
@@ -1085,7 +1085,18 @@ def edit_patient(request, patient_id):
             # Ensure new doctors are not already assigned
             for new_doc in new_doctors:
                 if not any(doc['email'] == new_doc['email'] for doc in assigned_doctors):
-                    assigned_doctors.append(new_doc)  # Append only if not duplicate
+                    try:
+                        doc_obj = Doctors.objects.get(email=new_doc['email'])
+                        assigned_doctors.append({
+                            'email': doc_obj.email,
+                            'name': doc_obj.name,
+                            'nmc': doc_obj.nmc_registration
+                        })
+                    except Doctors.DoesNotExist:
+                        print(f"Doctor with email {new_doc['email']} not found.")
+                    # assigned_doctors.append(new_doc)  # Append only if not duplicate
+            
+            print(assigned_doctors)
 
             patient.assigned_doctors = json.dumps(assigned_doctors)  # Convert list to JSON string
 
@@ -1962,6 +1973,93 @@ def send_reset_password(request):
             return JsonResponse({"message": "Reset link sent to email."})
         except Users.DoesNotExist:
             return JsonResponse({"error": "User with this email does not exist."}, status=404)
+
+
+
+########################## PAtient's chart and history #################33
+
+def prescriptions_view(request, patient_email):
+    records = list(Prescriptions.objects.filter(patient=patient_email).values())
+    return JsonResponse(records, safe=False)
+
+def patient_history(request, patient_email):
+    appoints = Appointments.objects.filter(patient=patient_email).values(
+        'appointment_date', 'doctor', 'status')
+    tests = TestBooking.objects.filter(patient=patient_email).values(
+        'booking_date', 'test_department', 'status')
+    packages = HealthPackageBookings.objects.filter(patient=patient_email).values(
+        'test__name', 'test_date', 'status', 'test__price')
+
+    def serialize_appointment(x): return {
+        "type": "Appointment",
+        "desc": f"{x['doctor']} ({x['status']})",
+        "date": x['appointment_date']
+    }
+    def serialize_test(x): return {
+        "type": "Test",
+        "desc": f"{x['test_department']} ({x['status']})",
+        "date": x['booking_date']
+    }
+    def serialize_package(x): return {
+        "type": "Package",
+        "desc": f"{x['test__name']} - Rs.{x['test__price']} ({x['status']})",
+        "date": x['test_date']
+    }
+
+    return JsonResponse({
+        "appointments": list(map(serialize_appointment, appoints)),
+        "tests": list(map(serialize_test, tests)),
+        "packages": list(map(serialize_package, packages))
+    })
+
+
+
+
+def get_detailed_patient_records(request, patient_email):
+    # Appointments with Prescriptions
+    appointment_data = []
+    appointments = Appointments.objects.filter(patient=patient_email)
+    for a in appointments:
+        prescription = Prescriptions.objects.filter(appointment_id=str(a.id)).first()
+        appointment_data.append({
+            "type": "Appointment",
+            "date": a.appointment_date.strftime("%Y-%m-%d"),
+            "desc": f"With Dr. {a.doctor}",
+            "prescription": {
+                "pressure": f"{prescription.pressure_systolic}/{prescription.pressure_diastolic}" if prescription else "",
+                "diabetes": prescription.diabetes if prescription else "",
+                "medication": prescription.medication if prescription else "",
+                "notes": prescription.notes if prescription else "",
+            } if prescription else None
+        })
+
+    # Test Reports
+    test_data = []
+    testbookings = TestBooking.objects.filter(patient=patient_email, status__in=["Completed", "Completion Notified"])
+    for t in testbookings:
+        test_data.append({
+            "type": "Test",
+            "date": t.booking_date.strftime("%Y-%m-%d"),
+            "desc": f"{t.test_department} ({t.status})",
+            "report_file": t.test_report.url if t.test_report else None
+        })
+
+    # Health Packages
+    packages = HealthPackageBookings.objects.filter(patient=patient_email)
+    package_data = []
+    for p in packages:
+        package_data.append({
+            "type": "Package",
+            "date": p.test_date.strftime("%Y-%m-%d"),
+            "desc": f"{p.test.name} (Rs. {p.test.price}) - {p.status}",
+        })
+
+    return JsonResponse({
+        "appointments": appointment_data,
+        "tests": test_data,
+        "packages": package_data
+    }, encoder=DjangoJSONEncoder)
+
 
 
 # def create_user_view(request):
