@@ -28,6 +28,7 @@ urlpatterns = [
     path('delete_admin/<uuid:admin_id>/', views.delete_admin, name="delete_admin"),
     path("api/get-banner/", views.get_banner, name="get-banner"),
     path("api/update-banner/", views.update_banner, name="update-banner"),
+    path("api/send-notice/", views.send_notice, name="send_notice"),
     #path for admin tasks
     path('api/add-receptionist/', views.add_receptionist),
     path('api/add-doctor/', views.add_doctor, name="add-doctor"),

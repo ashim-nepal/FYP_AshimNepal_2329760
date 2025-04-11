@@ -17,7 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Avg, Count
 from django.utils.dateparse import parse_date
-from django.core.mail import send_mail, EmailMessage
+from django.core.mail import send_mail, EmailMessage, send_mass_mail
 from django.conf import settings
 from django.utils.html import strip_tags
 from django.utils.dateparse import parse_time
@@ -416,6 +416,40 @@ def update_banner(request):
             return JsonResponse({"error": str(e)}, status=500)
 
     return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+
+@csrf_exempt
+def send_notice(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            subject = data.get("subject")
+            message = data.get("message")
+            target = data.get("target")
+
+            if not subject or not message or not target:
+                return JsonResponse({"error": "All fields are required."}, status=400)
+
+            if target == "all":
+                recipients = Users.objects.filter(is_active=True).values_list("email", flat=True)
+            elif target == "hospital":
+                recipients = Users.objects.exclude(role="Patient").filter(is_active=True).values_list("email", flat=True)
+            else:
+                return JsonResponse({"error": "Invalid target."}, status=400)
+
+            email_data = [(subject, message, settings.DEFAULT_FROM_EMAIL, [email]) for email in recipients]
+            send_mass_mail(email_data, fail_silently=False)
+
+            return JsonResponse({"message": "Notice sent successfully."})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid method."}, status=405)
+
+
+
+
 
 
 # Admin Dashboard Features
@@ -1230,12 +1264,17 @@ def get_doctor_availability(request, doctor_email):
         booked_slots = Appointments.objects.filter(doctor=avail, appointment_date=avail.date).values_list('appointment_time', flat=True)
         available_slots = [slot for slot in slots if slot not in booked_slots]
         day_name += timedelta(days=1)
+        emergency_slots=generate_time_slots(avail.emergency_start_time, avail.emergency_stop_time, avail.break_start, avail.break_end)
+        available_emergency_slots = [s for s in emergency_slots if s not in booked_slots]
 
         data.append({
             "date": avail.date.strftime("%Y-%m-%d"),
             "day":day_name.strftime("%A"),
             "available_time": available_slots,
-            "on_leave": avail.start_time is None or avail.end_time is None  # Check if doctor is on leave
+            "on_leave": avail.start_time is None or avail.end_time is None,  # Check if doctor is on leave
+            "emergency_available":avail.emergency_available,
+            "available_emergency":available_emergency_slots
+            
         })
 
     return JsonResponse(data, safe=False)
@@ -1247,6 +1286,7 @@ def book_appointment(request):
     doctor_email = data.get("doctor_email")
     appointment_date = parse_date(data.get("appointment_date"))
     appointment_time = data.get("appointment_time")
+    emergency_appointment = data.get("is_emergency")
     print(patient)
     
     doctor = get_object_or_404(Doctors, email=doctor_email)
@@ -1268,7 +1308,8 @@ def book_appointment(request):
         appointment_date=appointment_date,
         appointment_time=appointment_time,
         branch = branch_code,
-        is_booked=True
+        is_booked=True,
+        is_emergency=emergency_appointment
     )
     subject = f"Appointment booked on {appointment_date} - {appointment_time}"
     message = f"""Your have booked an appointment on {appointment_date} at {appointment_time} with Dr. {doctor.name}({doctor_email}). This is just your booking you will be notified again about the appointment conformation.\n\nThank You!!\n\n\n\n-{doctor.branch}"""

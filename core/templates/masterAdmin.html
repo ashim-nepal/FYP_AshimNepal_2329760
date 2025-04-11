@@ -69,10 +69,18 @@
       <button onclick="openBranchModal('Add Hospital')" id="add-hospital-btn" class="bg-green-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-green-700">
         Add Hospital
       </button>
+
       <button onclick="openAdminModal('Add Admin')"  id="add-admin-btn" class="bg-blue-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-blue-700">
         Add Admin
       </button>
-      <button id="open-banner-modal" class="bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700">Manage Banner</button>
+
+      <button id="open-banner-modal" class="bg-red-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-red-700">
+        Manage Banner
+      </button>
+
+      <button id="open-notice-modal" class="bg-teal-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-teal-700">
+        Send Notice
+      </button>
     </div>
 
     <!-- Records Section -->
@@ -161,6 +169,27 @@
               <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">Save</button>
           </div>
       </form>
+  </div>
+</div>
+
+<!-- Notice Modal -->
+<div id="notice-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex justify-center items-center z-50">
+  <div class="bg-white p-6 rounded-lg w-full max-w-md shadow-lg">
+    <h3 class="text-lg font-bold mb-4 text-green-700">Send Notice</h3>
+    <form id="notice-form" class="space-y-4">
+      <input type="text" id="notice-subject" placeholder="Subject" class="w-full p-2 border rounded" required />
+      <textarea id="notice-message" rows="4" placeholder="Write your message here..." class="w-full p-2 border rounded" required></textarea>
+      <select id="notice-target" class="w-full p-2 border rounded" required>
+        <option value="">Select Target</option>
+        <option value="all">All Users</option>
+        <option value="hospital">Hospital Members Only</option>
+      </select>
+      <div class="flex justify-end gap-4 mt-4">
+        <button type="button" onclick="closeNoticeModal()" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-green-700 text-white rounded hover:bg-green-800">Send</button>
+      </div>
+    </form>
+    <p id="notice-message-text" class="text-sm mt-2 text-center text-red-600"></p>
   </div>
 </div>
 
@@ -379,6 +408,49 @@ document.getElementById("close-modal-banner").addEventListener("click", () => {
     } catch (error) {
         console.error("Error updating banner:", error);
     }
+});
+
+
+// Notice sending js part 
+
+const noticeModal = document.getElementById("notice-modal");
+const openBtn = document.getElementById("open-notice-modal");
+const messageText = document.getElementById("notice-message-text");
+
+openBtn.addEventListener("click", () => {
+  noticeModal.classList.remove("hidden");
+});
+
+function closeNoticeModal() {
+  noticeModal.classList.add("hidden");
+  document.getElementById("notice-form").reset();
+  messageText.textContent = "";
+}
+
+document.getElementById("notice-form").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const subject = document.getElementById("notice-subject").value;
+  const message = document.getElementById("notice-message").value;
+  const target = document.getElementById("notice-target").value;
+
+  try {
+    const response = await fetch("/api/send-notice/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject, message, target }),
+    });
+
+    const result = await response.json();
+    if (response.ok) {
+      alert(result.message);
+      closeNoticeModal();
+    } else {
+      messageText.textContent = result.error;
+    }
+  } catch (error) {
+    messageText.textContent = "Something went wrong!";
+  }
 });
 
 

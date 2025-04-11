@@ -167,6 +167,8 @@ class DoctorAvailability(models.Model):
     end_time = models.TimeField(null=True, blank=True)
     break_start = models.TimeField(null=True, blank=True)
     break_end = models.TimeField(null=True, blank=True)
+    emergency_start_time = models.TimeField(null=True, blank=True)
+    emergency_stop_time = models.TimeField(null=True, blank=True)
     is_locked = models.BooleanField(default=False)
     emergency_available = models.BooleanField(default=False)
     
@@ -183,6 +185,9 @@ class DoctorAvailability(models.Model):
             self.break_start, self.break_end = time(16, 0), time(16, 30)
         elif self.working_day_type == "Leave":
             self.start_time = self.end_time = self.break_start = self.break_end = None
+        
+        if self.emergency_available == True:
+            self.emergency_start_time, self.emergency_stop_time = time(19, 0), time(20, 20)
 
         super().save(*args, **kwargs)
 

@@ -37,7 +37,7 @@
         <div class="w-36 h-36 bg-gray-200 rounded-full mb-4"></div>
         <p class="text-sm text-[#29622E] mb-4">Doctor Rating: ⭐{{ doc.rating }} / 10 (out of {{doc.rating_counts}} ratings)</p>
         <p class="text-sm text-[#29622E] mb-4">NMC Registration No: {{ doc.nmc_registration }}</p>
-        <button class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
+        <button class="emergency_booking bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] transition">
           Book an Online Appointment
         </button>
 
@@ -115,6 +115,28 @@
       </div>
     </div>
   </section>
+
+<!-- Online Appointment Modal -->
+<div id="emergency-modal" class="fixed inset-0 hidden z-50 bg-black bg-opacity-50 flex justify-center items-center">
+  <div class="bg-white w-full max-w-2xl p-6 rounded-lg shadow-lg relative">
+    <button onclick="document.getElementById('emergency-modal').classList.add('hidden')" class="absolute top-2 right-3 text-2xl">❌</button>
+    <h2 class="text-xl font-bold text-[#29622E] mb-4">Book Online Emergency Appointment</h2>
+    <p>Dr. {{doc.name}} / {{doc.department}}</p>
+    <table class="min-w-full text-sm border border-gray-300">
+      <thead class="bg-gray-100 text-[#29622E]">
+        <tr>
+          <th class="border px-4 py-2 text-left">Date</th>
+          <th class="border px-4 py-2 text-left">Available Time</th>
+        </tr>
+      </thead>
+      <tbody id="emergency-slots-table"></tbody>
+    </table>
+    <button id="emergency-book-btn" class="mt-4 bg-gray-300 text-white px-6 py-2 rounded-lg shadow cursor-not-allowed transition" disabled>
+      Book Emergency Appointment
+    </button>
+  </div>
+</div>
+
 
   <section>
     Footer here
@@ -253,6 +275,102 @@ document.addEventListener("DOMContentLoaded", function () {
         alert("{{msg}}");
       }
   });
+
+///// GET EMERGENCY BOOKINGS
+
+const emergencyBtn = document.querySelector(".emergency_booking");
+  const emergencyModal = document.getElementById("emergency-modal");
+  const emergencyTable = document.getElementById("emergency-slots-table");
+  const emergencyBookBtn = document.getElementById("emergency-book-btn");
+
+  let selectedEmergencyDate = null;
+  let selectedEmergencyTime = null;
+  const docEmail = "{{doc.email}}";
+
+  emergencyBtn.addEventListener("click", () => {
+    toggleEmergencyModal();
+    fetchEmergencySlots();
+  });
+
+  function toggleEmergencyModal() {
+    emergencyModal.classList.toggle("hidden");
+    emergencyTable.innerHTML = "";
+    emergencyBookBtn.disabled = true;
+    emergencyBookBtn.classList.add("bg-gray-300", "cursor-not-allowed");
+    emergencyBookBtn.classList.remove("bg-[#29622E]", "hover:bg-[#35993E]");
+  }
+
+  async function fetchEmergencySlots() {
+    let res = await fetch(`/api/get-weekly-slots/${docEmail}/`);
+    let data = await res.json();
+    console.log("Emergency data:", data);
+    emergencyTable.innerHTML = "";
+
+    data.forEach(day => {
+      if (day.emergency_available==true && day.available_emergency.length > 0) {
+        let row = `<tr>
+          <td class="border px-4 py-2">${day.date} - ${day.day}</td>
+          <td class="border px-4 py-2 space-x-2">
+            ${day.available_emergency.map(t => `
+              <button class="emg-btn px-4 py-1 bg-gray-200 text-gray-700 rounded shadow hover:bg-gray-300 transition" data-date="${day.date}" data-time="${t}">${t}</button>
+            `).join("")}
+          </td>
+        </tr>`;
+        emergencyTable.innerHTML += row;
+      }
+    });
+
+    document.querySelectorAll(".emg-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".emg-btn").forEach(b => {
+          b.classList.remove("bg-[#29622E]", "text-white");
+          b.classList.add("bg-gray-200", "text-gray-700");
+        });
+        btn.classList.remove("bg-gray-200", "text-gray-700");
+        btn.classList.add("bg-[#29622E]", "text-white");
+
+        selectedEmergencyDate = btn.dataset.date;
+        selectedEmergencyTime = btn.dataset.time;
+
+        emergencyBookBtn.disabled = false;
+        emergencyBookBtn.classList.remove("bg-gray-300", "cursor-not-allowed");
+        emergencyBookBtn.classList.add("bg-[#29622E]", "hover:bg-[#35993E]");
+      });
+    });
+  }
+
+  emergencyBookBtn.addEventListener("click", async () => {
+    if (!selectedEmergencyDate || !selectedEmergencyTime) return;
+    if (confirm(`Confirm booking for ${selectedEmergencyDate} at ${selectedEmergencyTime}?`)) {
+      const logged_in = "{{logged_in}}";
+      if (logged_in == "True") {
+        let response = await fetch("/api/book-appointment/", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+          body: JSON.stringify({
+            doctor_email: doctorEmail,
+            appointment_date: selectedEmergencyDate,
+            appointment_time: selectedEmergencyTime,
+            is_emergency: true
+          })
+        });
+        let result = await response.json();
+        if (response.ok) {
+          alert("Emergency appointment booked successfully!");
+          toggleEmergencyModal();
+        } else {
+          alert("Booking failed: " + result.error);
+        }
+      } else {
+        alert("{{msg}}");
+      }
+    }
+  });
+
+
+
+
+
 
   function getCSRFToken() {
       return document.cookie.split("; ").find(row => row.startsWith("csrftoken="))?.split("=")[1];
