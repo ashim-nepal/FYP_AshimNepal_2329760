@@ -62,6 +62,12 @@ class Users(models.Model):
     profile_pic = models.ImageField(upload_to='profile_pics/', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def get_email_field_name(self):
+        return "email"
+    
+    def get_username(self):
+        return self.email
+    
     def __str__(self):
         return self.name
 

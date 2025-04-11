@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, date
 from .serializers import HospitalBranchSerializer, UserSerializer, DoctorAvailabilitySerializer, AppointmentSerializer
 from django.http import JsonResponse, HttpResponse
 from django.contrib.auth.hashers import check_password, make_password
-from django.contrib.auth import login
+from django.contrib.auth import login, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
@@ -24,6 +24,11 @@ from django.utils.dateparse import parse_time
 from django.core.files.base import ContentFile
 from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import A4
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
+from django.template.loader import render_to_string
+from django.contrib.auth.tokens import default_token_generator
+from django.contrib.auth import authenticate, update_session_auth_hash
 
 
 # Create your views here.
@@ -1777,6 +1782,145 @@ def book_health_package(request):
             return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
+
+
+
+
+###### Change Password and Forgot Password###############
+
+@csrf_exempt
+def myAccPage(request):
+    if not request.session.get('is_authenticated'):
+        return redirect('/login/')
+    
+    if request.session.get('user_role') != 'patient':
+        return redirect('/login/')  # Prevent unauthorized access
+    
+    user_email = request.session.get('user_email')
+    print(user_email)
+    return render(request,"myAcc.html", {'user_email': user_email})
+
+@csrf_exempt
+def forgotPass(request):
+    
+    user_email = request.session.get('user_email')
+    print(user_email)
+    return render(request,"forgotPass.html", {'user_email': user_email})
+    
+    
+@csrf_exempt
+def resetPass(request, uidb64, token):
+    try:
+        uid = urlsafe_base64_decode(uidb64).decode()
+        user = Users.objects.get(pk=uid)
+
+        if not default_token_generator.check_token(user, token):
+            return render(request, "reset_invalid.html")
+
+    except Exception:
+        return render(request, "reset_invalid.html") 
+
+    return render(request, "reset_password.html", {"uidb64": uidb64, "token": token})
+
+@csrf_exempt
+def reset_forgotten_password(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        uidb64 = data.get("uidb64")
+        token = data.get("token")
+        password1 = data.get("new_password")
+        password2 = data.get("confirm_password")
+
+        if password1 != password2:
+            return JsonResponse({"error": "Passwords do not match!"}, status=400)
+
+        try:
+            uid = urlsafe_base64_decode(uidb64).decode()
+            user = Users.objects.get(pk=uid)
+
+            if not default_token_generator.check_token(user, token):
+                return JsonResponse({"error": "Invalid or expired token."}, status=400)
+
+            user.password = make_password(password1)
+            user.save()
+            
+
+            return JsonResponse({"message": "Password has been reset successfully."})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=400)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@csrf_exempt
+def update_password(request):
+    
+    if request.method == "POST":
+        try:
+            user_id = request.session.get('user_id')
+            if not user_id:
+                return JsonResponse({"error": "Unauthorized"}, status=401)
+
+            # Fetch actual User object
+            try:
+                user = Users.objects.get(id=user_id)  # if you're storing email in session
+            except Users.DoesNotExist:
+                return JsonResponse({"error": "User not found."}, status=404)
+
+            data = json.loads(request.body)
+            old_pass = data.get("old_password")
+            new_pass = data.get("new_password")
+            confirm_pass = data.get("confirm_password")
+
+            if not check_password(old_pass, user.password):
+                return JsonResponse({"error": "Incorrect current password."}, status=400)
+            
+            if new_pass == old_pass:
+                return JsonResponse({"error": "New passwords can not be same as old password.Please try new password."}, status=400)
+
+            if new_pass != confirm_pass:
+                return JsonResponse({"error": "New passwords do not match."}, status=400)
+
+            user.password = make_password(new_pass)
+            user.save()
+            
+            # Sending mail for confirmed password change!
+            send_mail(
+            subject="Password Changed!!",
+            message=f"Dear {user.name},\nWe notify to inform you that you have just changed your Password to syncHealth App. If it was not you, please contact to report at support syncHealth for account recovery.\n\nThank You.",
+            from_email=settings.EMAIL_HOST_USER,
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+            
+            return JsonResponse({"message": "Password updated successfully."})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+    return JsonResponse({"error": "Invalid request method."}, status=405)
+
+
+@csrf_exempt
+def send_reset_password(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        email = data.get("email")
+        try:
+            user = Users.objects.get(email=email)
+            token = default_token_generator.make_token(user)
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            reset_url = request.build_absolute_uri(f"/reset-password/{uid}/{token}/")
+
+            html_message = render_to_string("email_template.html", {"reset_url": reset_url, "user": user})
+            send_mail(
+                "Password Reset - SyncHealth",
+                f"Use the following link to reset your password: {reset_url}",
+                None, [email],
+                html_message=html_message
+            )
+            return JsonResponse({"message": "Reset link sent to email."})
+        except Users.DoesNotExist:
+            return JsonResponse({"error": "User with this email does not exist."}, status=404)
 
 
 # def create_user_view(request):
