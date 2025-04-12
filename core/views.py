@@ -35,7 +35,30 @@ from django.core.files.storage import default_storage
 
 # Create your views here.
 def home(request):
-    return render(request, "home.html")
+    banner = Banners.objects.first()
+    banner_file = banner.banner_file
+    hospital = HospitalBranches.objects.all()
+    packages = HealthPackages.objects.order_by('?')[:8]
+    doctors = Doctors.objects.order_by('-rating')[:6]
+    doc_profiles = []
+    
+    for doc in doctors:
+        try:
+            user = Users.objects.get(email=doc.email)
+            profile_pic = user.profile_pic.url if user.profile_pic else None
+        except Users.DoesNotExist:
+            profile_pic = None
+
+        doc_profiles.append({
+            "name": doc.name,
+            "email": doc.email,
+            "rating": doc.rating,
+            "branch": doc.branch,
+            "department": doc.department,
+            "profile_pic": profile_pic,
+        })
+    
+    return render(request, "home.html", {"banner_file":banner_file, 'hospital':hospital, 'packages':packages, 'doctors':doc_profiles})
 
 
 def patientProfile(request):

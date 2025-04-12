@@ -152,7 +152,8 @@ class Doctors(models.Model):
         self.save()
 
     def __str__(self):
-        return f"{self.name} - {self.department.name}" 
+        # return f"{self.name} - {self.department.name} -{self.rating}" 
+        return f"{self.name} - {self.department} -{self.rating}" 
 
 
 class DoctorAvailability(models.Model):

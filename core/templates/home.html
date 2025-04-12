@@ -139,7 +139,7 @@
   </nav>
 
 <!-- Banner Section-->
-  <section class="relative bg-cover bg-center h-[500px] sm:h-[600px] lg:h-[700px]" style="background-image: url('');">
+  <section class="relative bg-cover bg-center h-[500px] sm:h-[600px] lg:h-[700px]" style="background-image: url('/media/{{banner_file}}');">
     <div class="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div class="text-center text-white px-4 sm:px-6 lg:px-8">
         <h2 class="text-4xl sm:text-5xl font-bold mb-4">Welcome to sync Health!</h2>
@@ -213,66 +213,16 @@
         <!-- Card Container (Fixed Scroll Issue) -->
         <div id="card-container" class="flex space-x-6 overflow-x-auto no-scrollbar scrollbar-hidden">
           <!-- Single Package Card -->
-          <a href="#" class="flex-none w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/5 bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-            <img src="https://via.placeholder.com/400x250" alt="Package Image" class="w-full h-40 object-cover">
-            <div class="p-4">
-              <h3 class="font-bold text-[#29622E] mb-1">Package Name 1</h3>
-              <p class="text-sm text-gray-600 mb-3">Category Name</p>
-              <p class="text-gray-700 mb-4">Tests Included: 2</p>
-              <p class="font-bold text-[#29622E]">Price: $100</p>
-            </div>
-          </a>
-  
-          <!-- More Package Cards (Repeat) -->
-          <a href="#" class="flex-none w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/5 bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-            <img src="https://via.placeholder.com/400x250" alt="Package Image" class="w-full h-40 object-cover">
-            <div class="p-4">
-              <h3 class="font-bold text-[#29622E] mb-1">Package Name 2</h3>
-              <p class="text-sm text-gray-600 mb-3">Category Name</p>
-              <p class="text-gray-700 mb-4">Tests Included: 4</p>
-              <p class="font-bold text-[#29622E]">Price: $150</p>
-            </div>
-          </a>
-  
-          <a href="#" class="flex-none w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/5 bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-            <img src="https://via.placeholder.com/400x250" alt="Package Image" class="w-full h-40 object-cover">
-            <div class="p-4">
-              <h3 class="font-bold text-[#29622E] mb-1">Package Name 3</h3>
-              <p class="text-sm text-gray-600 mb-3">Category Name</p>
-              <p class="text-gray-700 mb-4">Tests Included: 6</p>
-              <p class="font-bold text-[#29622E]">Price: $200</p>
-            </div>
-          </a>
-  
-          <a href="#" class="flex-none w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/5 bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-            <img src="https://via.placeholder.com/400x250" alt="Package Image" class="w-full h-40 object-cover">
-            <div class="p-4">
-              <h3 class="font-bold text-[#29622E] mb-1">Package Name 4</h3>
-              <p class="text-sm text-gray-600 mb-3">Category Name</p>
-              <p class="text-gray-700 mb-4">Tests Included: 3</p>
-              <p class="font-bold text-[#29622E]">Price: $250</p>
-            </div>
-          </a>
-  
-          <a href="#" class="flex-none w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/5 bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-            <img src="https://via.placeholder.com/400x250" alt="Package Image" class="w-full h-40 object-cover">
-            <div class="p-4">
-              <h3 class="font-bold text-[#29622E] mb-1">Package Name 5</h3>
-              <p class="text-sm text-gray-600 mb-3">Category Name</p>
-              <p class="text-gray-700 mb-4">Tests Included: 4</p>
-              <p class="font-bold text-[#29622E]">Price: $300</p>
-            </div>
-          </a>
-  
-          <a href="#" class="flex-none w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/5 bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-            <img src="https://via.placeholder.com/400x250" alt="Package Image" class="w-full h-40 object-cover">
-            <div class="p-4">
-              <h3 class="font-bold text-[#29622E] mb-1">Package Name 6</h3>
-              <p class="text-sm text-gray-600 mb-3">Category Name</p>
-              <p class="text-gray-700 mb-4">Tests Included: 5</p>
-              <p class="font-bold text-[#29622E]">Price: $350</p>
-            </div>
-          </a>
+          {% for package in packages %}
+            <a href="/health-package/{{package.id}}" class="flex-none w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/5 bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
+              <img src="/media/{{package.image}}" alt="Package Image" class="w-full h-40 object-cover">
+              <div class="p-4">
+                <h3 class="font-bold text-[#29622E] mb-1">{{package.name}}</h3>
+                <p class="text-gray-700 mb-4">{{package.branch}}</p>
+                <p class="font-bold text-[#29622E]">Price: {{package.price}}</p>
+              </div>
+            </a>
+          {% endfor %}
         </div>
   
         <!-- Right Arrow Button -->
@@ -296,60 +246,19 @@
       <!-- Top Doctors Cards (Grid) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         <!-- Single Doctor Card -->
-        <a href="#" class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-          <img src="https://via.placeholder.com/400x250" alt="Doctor Image" class="w-full h-40 object-cover">
+        {% for doctor in doctors %}
+        <a href="/docProfile/{{doctor.email}}" class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
+          <img src="{{doctor.profile_pic}}" alt="Doctor Image" class="w-full h-40 object-cover">
           <div class="p-4">
-            <h3 class="font-bold text-[#29622E] mb-1">Dr. John Doe</h3>
-            <p class="text-sm text-gray-600 mb-3">Cardiologist</p>
-            <a href="#" class="font-bold text-[#29622E] underline">View Profile</a>
+            <h3 class="font-bold text-[#29622E] mb-1">Dr. {{doctor.name}}</h3>
+            <p class="text-sm text-gray-600 mb-3">{{doctor.department}}</p>
+            <p class="text-sm text-gray-600 mb-3">{{doctor.branch}}</p>
+            
+            <a href="/docProfile/{{doctor.email}}" class="font-bold text-[#29622E] underline">View Profile</a>
           </div>
         </a>
-  
-        <!-- More Doctor Cards (Repeat) -->
-        <a href="#" class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-          <img src="https://via.placeholder.com/400x250" alt="Doctor Image" class="w-full h-40 object-cover">
-          <div class="p-4">
-            <h3 class="font-bold text-[#29622E] mb-1">Dr. Jane Smith</h3>
-            <p class="text-sm text-gray-600 mb-3">Dermatologist</p>
-            <a href="#" class="font-bold text-[#29622E] underline">View Profile</a>
-          </div>
-        </a>
-  
-        <a href="#" class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-          <img src="https://via.placeholder.com/400x250" alt="Doctor Image" class="w-full h-40 object-cover">
-          <div class="p-4">
-            <h3 class="font-bold text-[#29622E] mb-1">Dr. Michael Brown</h3>
-            <p class="text-sm text-gray-600 mb-3">Orthopedic Surgeon</p>
-            <a href="#" class="font-bold text-[#29622E] underline">View Profile</a>
-          </div>
-        </a>
-  
-        <a href="#" class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-          <img src="https://via.placeholder.com/400x250" alt="Doctor Image" class="w-full h-40 object-cover">
-          <div class="p-4">
-            <h3 class="font-bold text-[#29622E] mb-1">Dr. Emily Davis</h3>
-            <p class="text-sm text-gray-600 mb-3">Pediatrician</p>
-            <a href="#" class="font-bold text-[#29622E] underline">View Profile</a>
-          </div>
-        </a>
-  
-        <a href="#" class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-          <img src="https://via.placeholder.com/400x250" alt="Doctor Image" class="w-full h-40 object-cover">
-          <div class="p-4">
-            <h3 class="font-bold text-[#29622E] mb-1">Dr. Olivia Johnson</h3>
-            <p class="text-sm text-gray-600 mb-3">Neurologist</p>
-            <a href="#" class="font-bold text-[#29622E] underline">View Profile</a>
-          </div>
-        </a>
-  
-        <a href="#" class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl">
-          <img src="https://via.placeholder.com/400x250" alt="Doctor Image" class="w-full h-40 object-cover">
-          <div class="p-4">
-            <h3 class="font-bold text-[#29622E] mb-1">Dr. Lucas White</h3>
-            <p class="text-sm text-gray-600 mb-3">Dentist</p>
-            <a href="#" class="font-bold text-[#29622E] underline">View Profile</a>
-          </div>
-        </a>
+        {% endfor %}
+
       </div>
     </div>
   </section>
@@ -371,21 +280,17 @@
         <div class="overflow-hidden">
           <div class="flex space-x-6" id="branch-cards-container">
             <!-- Branch Card 1 -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl w-[280px] sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
-              <img src="" class="w-full h-40 object-cover">
-              <div class="p-4">
-                <h3 class="font-bold text-[#29622E] mb-1">Hospital 1</h3>
-                <p class="text-sm text-gray-600">123 Main Street, City, Country</p>
+            {% for h in hospital %}
+              <div class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl w-[280px] sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
+                
+                <div class="p-4">
+                  <h3 class="font-bold text-[#29622E] mb-1">{{h.branch_name}}</h3>
+                  <p class="text-sm text-gray-600">{{h.branch_location}}</p>
+                </div>
               </div>
-            </div>
+            {% endfor %}
   
-            <!-- Branch Card 2 -->
-            <div class="bg-white shadow-lg rounded-lg overflow-hidden transition-transform transform hover:scale-105 hover:shadow-2xl w-[280px] sm:w-[350px] md:w-[400px] lg:w-[450px] xl:w-[500px]">
-              <img src="" class="w-full h-40 object-cover">
-              <div class="p-4">
-                <h3 class="font-bold text-[#29622E] mb-1">Hospital 2</h3>
-                <p class="text-sm text-gray-600">456 Oak Road, Town, Country</p>
-              </div>
+
             </div>
             </div>
           </div>
@@ -405,25 +310,25 @@
       <div class="testimonial-cards-wrapper relative overflow-x-auto flex space-x-6">
         <!-- Testimonial 1 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="profile1.jpg" alt="Person 1" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="" alt="Person 1" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">John Doe</p>
           <p class="text-gray-600 mt-2">"This hospital changed my life. The doctors were amazing and the care was top-notch!"</p>
         </div>
         <!-- Testimonial 2 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="profile2.jpg" alt="Person 2" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="" alt="Person 2" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">Jane Smith</p>
           <p class="text-gray-600 mt-2">"I had a great experience with the team. Highly recommend for anyone seeking quality care."</p>
         </div>
         <!-- Testimonial 3 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="profile3.jpg" alt="Person 3" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="" alt="Person 3" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">Michael Lee</p>
           <p class="text-gray-600 mt-2">"I was impressed by the professionalism and care provided by the staff."</p>
         </div>
         <!-- Testimonial 4 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="profile4.jpg" alt="Person 4" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="" alt="Person 4" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">Emily Johnson</p>
           <p class="text-gray-600 mt-2">"I felt well cared for during my treatment. I am forever grateful for their excellent service."</p>
         </div>
@@ -498,7 +403,7 @@
         ></iframe>
         <button 
           id="close-popup" 
-          class="mt-4 w-full bg-[#35993E] text-white py-2 px-4 rounded hover:bg-[#29622E]">
+          class="mt-4 w-full bg-[#808080] text-white py-2 px-4 rounded hover:bg-[#808099]">
           Close
         </button>
       </div>
@@ -533,13 +438,27 @@
         popupBox.classList.remove('hidden');
     });
     
+    // Dynamic Nearby Pharmacy Tracker
     document.getElementById('track-pharmacy').addEventListener('click', (event) => {
-        event.preventDefault();
-        popupTitle.textContent = 'Nearby Pharmacy Tracker'; // Set the title for pharmacy tracker
-        mapFrame.src = 'https://www.google.com/maps/embed?pb=YOUR_EMBED_MAP_URL'; // Replace with pharmacy map link
-        popupBox.classList.remove('hidden');
+      event.preventDefault();
+      popupTitle.textContent = 'Nearby Pharmacy Tracker';
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          // Embed Google Maps pharmacy search near user's location
+          const searchURL = `https://www.google.com/maps?q=pharmacy&ll=${lat},${lon}&z=15&output=embed`;
+          mapFrame.src = searchURL;
+          popupBox.classList.remove('hidden');
+        }, () => {
+          alert("Location permission denied or unavailable.");
+        });
+      } else {
+        alert("Your browser does not support geolocation.");
+      }
     });
-    
     // Close Popup
     closePopup.addEventListener('click', () => {
         popupBox.classList.add('hidden');
@@ -570,45 +489,7 @@
     });
   });
 
-
-  // doctor's card js
-  const prevDoctorButton = document.getElementById('prev-doctor');
-  const nextDoctorButton = document.getElementById('next-doctor');
-  const doctorCardContainer = document.getElementById('doctor-card-container');
-
-  prevDoctorButton.addEventListener('click', () => {
-    doctorCardContainer.scrollBy({
-      left: -350, // Scroll left by 350px (adjust as needed)
-      behavior: 'smooth'
-    });
-  });
-
-  nextDoctorButton.addEventListener('click', () => {
-    doctorCardContainer.scrollBy({
-      left: 350, // Scroll right by 350px (adjust as needed)
-      behavior: 'smooth'
-    });
-  });
-
-  // Hospital branches
-  const scrollLeftButton = document.getElementById("scroll-left");
-  const scrollRightButton = document.getElementById("scroll-right");
-  const container = document.getElementById("branch-cards-container");
-
-  scrollLeftButton.addEventListener("click", () => {
-    container.scrollBy({
-      left: -250,
-      behavior: 'smooth'
-    });
-  });
-
-  scrollRightButton.addEventListener("click", () => {
-    container.scrollBy({
-      left: 250,
-      behavior: 'smooth'
-    });
-  });
-
+  
   //testimonials
   
     
