@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews, Prescriptions, TestResults, TestBooking, HealthPackageBookings
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews, Prescriptions, TestResults, TestBooking, HealthPackageBookings, Messages, ChatGroup
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -29,6 +29,8 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from django.template.loader import render_to_string
 from django.contrib.auth.tokens import default_token_generator
 from django.core.serializers.json import DjangoJSONEncoder
+from django.core.files.storage import default_storage
+
 
 
 # Create your views here.
@@ -2059,6 +2061,213 @@ def get_detailed_patient_records(request, patient_email):
         "tests": test_data,
         "packages": package_data
     }, encoder=DjangoJSONEncoder)
+
+
+######## Messages / Chat #############
+
+@csrf_exempt
+def chatPage(request):
+    
+    if not request.session.get('is_authenticated'):
+        return redirect('/login/')
+    
+    if request.session.get('user_role') not in ['patient', 'doctor']:
+        return redirect('/login/')
+    
+    
+    user_role = request.session.get('user_role')
+    user_email = request.session.get('user_email')
+    print(user_role)
+    
+    return render(request, 'chat.html', {'user_role':user_role, 'user_email':user_email}) 
+
+@csrf_exempt
+def get_contacts(request):
+    user = request.user
+    contacts = []
+
+    user_role = request.session.get('user_role')
+    user_email = request.session.get('user_email')
+
+    if user_role == "patient":
+        patient = get_object_or_404(Patients, email=user_email)
+
+        try:
+            assigned = json.loads(patient.assigned_doctors) if isinstance(patient.assigned_doctors, str) else patient.assigned_doctors
+        except json.JSONDecodeError:
+            assigned = []
+
+        for doc in assigned:
+            contacts.append({
+                "name": doc.get('name'),
+                "email": doc.get('email')
+            })
+
+    elif user_role == "doctor":
+        all_patients = Patients.objects.all()
+        for p in all_patients:
+            try:
+                assigned = json.loads(p.assigned_doctors) if isinstance(p.assigned_doctors, str) else p.assigned_doctors
+            except json.JSONDecodeError:
+                assigned = []
+
+            if any(d.get('email') == user_email for d in assigned):
+                contacts.append({
+                    "name": p.name,
+                    "email": p.email
+                })
+
+    return JsonResponse({"contacts": contacts})
+
+
+
+@csrf_exempt
+def get_messages(request, receiver_email):
+    user_email = request.session.get('user_email')
+    user = get_object_or_404(Users, email=user_email)
+    receiver = get_object_or_404(Users, email=receiver_email)
+
+    messages = Messages.objects.filter(
+        sender__in=[user, receiver],
+        receiver__in=[user, receiver]
+    ).order_by("timestamp")
+
+    return JsonResponse({
+        "messages": [{
+            "sender": m.sender.email,
+            "receiver": m.receiver.email,
+            "content": m.content,
+            "timestamp": m.timestamp.strftime("%d-%m-%Y %H:%M"),
+            "image_url": m.image.url if m.image else None,
+        } for m in messages],
+        "current_user": user_email
+    })
+
+
+
+@csrf_exempt  # only for dev/testing; use CSRF token in prod
+def send_message(request):
+    if request.method == "POST":
+        sender_email = request.session.get("user_email")
+        receiver_email = request.POST.get("receiver")
+        content = request.POST.get("content", "")
+        image = request.FILES.get("image")  # this is the key part
+
+        sender = Users.objects.get(email=sender_email)
+        receiver = Users.objects.get(email=receiver_email)
+
+        msg = Messages.objects.create(
+            sender=sender,
+            receiver=receiver,
+            content=content,
+            image=image  # Save uploaded image here
+        )
+
+        return JsonResponse({
+            "status": "success",
+            "message_id": str(msg.id),
+            "image_url": msg.image.url if msg.image else None,
+        })
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+
+# @csrf_exempt
+# def send_message(request):
+#     if request.method == "POST":
+#         user_email = request.session.get('user_email')
+#         sender = get_object_or_404(Users, email=user_email)
+#         receiver_email = request.POST.get("receiver")
+#         content = request.POST.get("content", "")
+#         image = request.FILES.get("image")
+
+#         receiver = get_object_or_404(Users, email=receiver_email)
+
+#         if image:
+#             file_path = default_storage.save("chat_images/" + image.name, image)
+#             content += f'\n[Image: /media/{file_path}]'
+
+#         Messages.objects.create(sender=sender, receiver=receiver, content=content)
+
+#         return JsonResponse({"message": "Sent"})
+#     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+@csrf_exempt
+def get_private_chat(request, receiver_email):
+    sender = request.user
+    receiver = get_object_or_404(Users, email=receiver_email)
+
+    messages = Messages.objects.filter(
+        sender__in=[sender, receiver],
+        receiver__in=[sender, receiver],
+        group__isnull=True
+    ).order_by("timestamp")
+
+    data = [
+        {
+            "sender": msg.sender.email,
+            "receiver": msg.receiver.email,
+            "content": msg.content,
+            "image": msg.image.url if msg.image else None,
+            "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        } for msg in messages
+    ]
+    return JsonResponse({"messages": data})
+
+
+@csrf_exempt
+def send_private_message(request):
+    if request.method == "POST":
+        sender = request.user
+        data = request.POST
+
+        receiver_email = data.get("receiver")
+        content = data.get("content", "")
+        image = request.FILES.get("image")
+
+        receiver = get_object_or_404(Users, email=receiver_email)
+
+        Messages.objects.create(sender=sender, receiver=receiver, content=content, image=image)
+        return JsonResponse({"message": "Message sent!"})
+    return JsonResponse({"error": "Invalid method"}, status=400)
+
+
+@csrf_exempt
+def get_group_chat(request, dept_name):
+    sender = request.user
+    group = get_object_or_404(ChatGroup, department=dept_name)
+
+    messages = Messages.objects.filter(group=group).order_by("timestamp")
+
+    data = [
+        {
+            "sender": msg.sender.name,
+            "content": msg.content,
+            "image": msg.image.url if msg.image else None,
+            "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+        } for msg in messages
+    ]
+    return JsonResponse({"messages": data})
+
+
+@csrf_exempt
+def send_group_message(request):
+    if request.method == "POST":
+        sender = request.user
+        data = request.POST
+
+        department = data.get("department")
+        content = data.get("content", "")
+        image = request.FILES.get("image")
+
+        group = get_object_or_404(ChatGroup, department=department)
+        Messages.objects.create(sender=sender, group=group, content=content, image=image)
+        return JsonResponse({"message": "Group message sent!"})
+    return JsonResponse({"error": "Invalid method"}, status=400)
 
 
 

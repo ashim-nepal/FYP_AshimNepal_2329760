@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Patient's Profile</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 </head>
 <body class="bg-gray-50">
 
@@ -26,7 +29,7 @@
       <!-- Left Section -->
       <div class="flex flex-col items-center bg-white shadow-md p-6 rounded-lg w-full lg:w-1/3">
         <!-- Profile Image -->
-        <div class="w-36 h-36 bg-gray-200 rounded-full mb-4"></div>
+        <img src="/media/{{patient_image}}" alt="Profile Image" class="w-36 h-36 rounded-full mb-4 object-cover bg-gray-200" />
         <p class="text-sm text-[#29622E] mb-4">Patient No: {{patients.patient_no}}</p>
       </div>
 
@@ -38,19 +41,21 @@
         <p class="mb-4"><span class="font-bold">Gender:</span> {{ patients.gender}}</p>
         <p class="mb-4"><span class="font-bold">Address:</span> {{ patients.address}}</p>
         <p class="mb-4"><span class="font-bold">Consultant Doctor(s):</span> {% for doctor in patients.assigned_doctors_data %}
-          {{ doctor.name }}{% if not forloop.last %}, {% endif %}
+          <a href="mailto:{{doctor.email}}" target="_blank" title="{{doctor.email}}"> {{ doctor.name }}(NMC: {{doctor.nmc}})</a>{% if not forloop.last %}, {% endif %}
       {% endfor %} 
         </p>
-        <p class="font-bold mb-2">Health Charts:</p>
 
         <!-- Placeholder for Health Chart -->
-        <div class="w-full h-48 bg-gray-100 rounded-md flex items-center justify-center text-gray-500">
+        <div class="w-full h-48 bg-gray-100 hidden rounded-md flex items-center justify-center text-gray-500">
           Graph Placeholder
         </div>
 
         <!-- Hospital Records -->
         <p class="font-bold mt-6 mb-2">Hospital Records:</p>
-        <div class="space-y-4">
+        <button onclick="loadPatientHistory('{{ patients.email }}')" class="mt-6 bg-[#29622E] text-white px-4 py-2 rounded-lg shadow hover:bg-[#35993E]">
+          View All Detailed Records
+        </button>
+        <div class="space-y-4 hidden">
           <!-- Each Record -->
           <a href="#" class="block bg-white border border-gray-200 shadow-sm p-4 rounded-lg hover:shadow-md transition">
             <p class="text-[#29622E] font-bold">03-12-2024</p>
@@ -65,10 +70,197 @@
     </div>
   </section>
 
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- Replace the Graph Placeholder Div -->
+<div id="chart-container" class="bg-white rounded-md p-4 shadow-md">
+  <div class="flex justify-between items-center mb-4">
+    <h3 class="font-bold text-lg text-[#29622E]">Health Charts - {{patients.name}}</h3>
+    <button id="print-chart-btn" class="bg-green-700 text-white px-4 py-1 rounded">Print Chart PDF</button>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <canvas id="bp-chart" height="250"></canvas>
+    <canvas id="sugar-chart" height="250"></canvas>
+  </div>
+</div>
+
+
+
+<!-- History Dialog Modal -->
+<div id="recordModal" class="fixed inset-0 hidden bg-black bg-opacity-50 items-center justify-center z-50">
+  <div class="bg-white rounded-lg w-full max-w-3xl p-6 overflow-y-auto max-h-[90vh] relative">
+    <button onclick="toggleModal()" class="absolute top-2 right-4 text-xl">&times;</button>
+    <h2 class="text-xl font-bold text-[#29622E] mb-4">Record Details</h2>
+    <div id="modal-content" class="space-y-4"></div>
+    <button id="print-chart-btn" class="bg-blue-600 text-white px-4 py-2 rounded mt-4 hover:bg-blue-700">
+      Print Chart as PDF
+    </button>
+  </div>
+</div>
+
+
+<div id="record-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
+  <div class="bg-white rounded-lg shadow-lg w-11/12 max-w-3xl p-6 relative overflow-y-auto max-h-[90vh]">
+    <button onclick="toggleModal()" class="absolute top-3 right-3 text-xl">✖</button>
+    <h2 class="text-xl font-bold text-[#29622E] mb-4">Detailed Record</h2>
+    <div id="record-details" class="space-y-4"></div>
+    <button onclick="printRecord()" class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] mt-4">Print Record</button>
+  </div>
+</div>
+
   <section>
     Footer here
   </section>
   <script>
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const patientEmail = "{{patients.email}}";
+  
+      const [pres, history] = await Promise.all([
+        fetch(`/api/prescriptions/${patientEmail}`).then(r => r.json()),
+        fetch(`/api/patient-history/${patientEmail}`).then(r => r.json())
+      ]);
+  
+      renderCharts(pres);
+    });
+  
+    function renderCharts(pres) {
+      const dates = pres.map(p => p.date);
+      const systolic = pres.map(p => parseInt(p.pressure_systolic || 0));
+      const diastolic = pres.map(p => parseInt(p.pressure_diastolic || 0));
+      const sugar = pres.map(p => parseInt(p.diabetes || 0));
+  
+      new Chart("bp-chart", {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [
+            { label: "Systolic", data: systolic, borderColor: "#2563EB", fill: false },
+            { label: "Diastolic", data: diastolic, borderColor: "#16A34A", fill: false }
+          ]
+        }
+      });
+  
+      new Chart("sugar-chart", {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [{ label: "Diabetes", data: sugar, borderColor: "#DC2626", fill: false }]
+        }
+      });
+    }
+  
+    function showDetails(data) {
+      const content = document.getElementById("modal-content");
+      content.innerHTML = "";
+      Object.entries(data).forEach(([key, val]) => {
+        const line = document.createElement("p");
+        line.innerHTML = `<span class='font-bold capitalize'>${key.replace("_", " ")}</span>: ${val}`;
+        content.appendChild(line);
+      });
+      toggleModal();
+    }
+  
+    function toggleModal() {
+      document.getElementById("recordModal").classList.toggle("hidden");
+    }
+  
+    document.getElementById("print-chart-btn").addEventListener("click", async function () {
+      const chartContainer = document.getElementById("chart-container");
+  
+      if (!window.jspdf || !html2canvas) {
+        alert("Required libraries not loaded!");
+        return;
+      }
+  
+      const { jsPDF } = window.jspdf;   // ✅ Proper import
+      const doc = new jsPDF();
+  
+      const canvas = await html2canvas(chartContainer);
+      const imgData = canvas.toDataURL("image/png");
+      doc.addImage(imgData, "PNG", 10, 10, 190, 100);  // (x, y, width, height)
+      doc.save("health-chart.pdf");
+    });
+  
+    function downloadChartPDF() {
+      import('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js').then(jsPDF => {
+        const { jsPDF: PDF } = jsPDF;
+        const pdf = new jsPDF();
+        const canvas1 = document.getElementById("bp-chart");
+        const canvas2 = document.getElementById("sugar-chart");
+        pdf.text("Blood Pressure", 10, 10);
+        pdf.addImage(canvas1.toDataURL(), "PNG", 10, 20, 180, 80);
+        pdf.text("Sugar Level", 10, 110);
+        pdf.addImage(canvas2.toDataURL(), "PNG", 10, 120, 180, 80);
+        pdf.save("HealthCharts.pdf");
+      });
+    }
+
+
+    function toggleModal(data = null) {
+      const modal = document.getElementById("record-modal");
+      modal.classList.toggle("hidden");
+      if (data) renderRecordDetails(data);
+    }
+    
+    function renderRecordDetails(data) {
+      const container = document.getElementById("record-details");
+      container.innerHTML = "";
+    
+      const append = (title, desc, date, extras = "") => {
+        container.innerHTML += `
+          <div class="p-4 border rounded-lg bg-gray-50">
+            <p class="text-green-700 font-bold">${title}</p>
+            <p class="text-sm text-gray-700">${desc}</p>
+            <p class="text-xs text-gray-500 mb-2">Date: ${date}</p>
+            ${extras}
+          </div>`;
+      };
+    
+      data.appointments.forEach(item => {
+        let extra = "";
+        if (item.prescription) {
+          extra = `
+            <p><strong>BP:</strong> ${item.prescription.pressure}</p>
+            <p><strong>Diabetes:</strong> ${item.prescription.diabetes}</p>
+            <p><strong>Medication:</strong> ${item.prescription.medication}</p>
+            <p><strong>Notes:</strong> ${item.prescription.notes}</p>`;
+        }
+        append("Appointment", item.desc, item.date, extra);
+      });
+    
+      data.tests.forEach(item => {
+        let extra = item.report_file ? `<a href="${item.report_file}" target="_blank" class="text-blue-600 underline">📄 View Report</a>` : "";
+        append("Test", item.desc, item.date, extra);
+      });
+    
+      data.packages.forEach(item => {
+        append("Package", item.desc, item.date);
+      });
+    }
+    
+    function loadPatientHistory(patientEmail) {
+      fetch(`/api/patient-records/${patientEmail}/`)
+        .then(res => res.json())
+        .then(data => toggleModal(data))
+        .catch(err => console.error(err));
+    }
+    
+    function printRecord() {
+      const content = document.getElementById("record-details").innerHTML;
+      const win = window.open("", "_blank");
+      win.document.write(`
+        <html><head><title>Print Record</title></head><body>${content}</body></html>
+      `);
+      win.document.close();
+      win.focus();
+      win.print();
+      win.close();
+    }
+
+
       // Confirm Logout
   function confirmLogout() {
     if (confirm("Are you sure you want to logout?")) {

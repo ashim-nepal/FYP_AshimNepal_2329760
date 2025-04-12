@@ -212,15 +212,26 @@ class Appointments(models.Model):
 
 
 
+class ChatGroup(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    department = models.CharField(max_length=100)
+    members = models.ManyToManyField(Users)  # Doctors only
+
+    def __str__(self):
+        return self.department
+
+
 class Messages(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     sender = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='sent_messages')
-    receiver = models.ForeignKey(Users, on_delete=models.CASCADE, related_name='received_messages')
-    content = models.TextField()
+    receiver = models.ForeignKey(Users, on_delete=models.CASCADE, null=True, blank=True, related_name='received_messages')
+    group = models.ForeignKey(ChatGroup, on_delete=models.CASCADE, null=True, blank=True)
+    content = models.TextField(blank=True)
+    image = models.ImageField(upload_to="chat_uploads/", null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.sender.name} -> {self.receiver.name}"
+        return f"{self.sender.name} {'-> ' + self.receiver.name if self.receiver else '-> Group: ' + self.group.department}"
 
 
 class HealthPackages(models.Model):

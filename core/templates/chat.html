@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Messaging</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+  <!-- Header -->
+  <header class="bg-white shadow p-4 flex justify-between items-center border-b">
+    <h1 class="text-2xl font-bold text-[#29622E]">Chat Portal</h1>
+    <a href="/logout" class="text-[#29622E] hover:underline">Logout</a>
+  </header>
+
+  <!-- Container -->
+  <main class="max-w-6xl mx-auto mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+
+    <!-- Sidebar -->
+    <aside class="bg-white p-4 rounded shadow-md col-span-1">
+      <h2 class="text-[#29622E] font-semibold mb-2">Contacts</h2>
+      <input type="text" placeholder="Search..." class="w-full mb-3 px-3 py-2 border rounded text-sm" />
+      <ul id="user-list" class="space-y-2 max-h-[500px] overflow-y-auto">
+        <!-- JS Injected Users -->
+      </ul>
+    </aside>
+
+    <!-- Chat Section -->
+    <section class="bg-white rounded shadow-md p-4 col-span-3 flex flex-col h-[75vh]">
+      <!-- Chat Header -->
+      <div class="border-b pb-2 mb-2">
+        <h3 id="chat-with" class="text-lg font-bold text-[#29622E]">Select a user</h3>
+      </div>
+
+      <!-- Messages -->
+      <div id="chat-box" class="flex-1 overflow-y-auto space-y-3 p-2 border rounded bg-gray-50">
+        <!-- JS Injected Messages -->
+      </div>
+
+      <!-- Message Input -->
+      <form id="message-form" class="mt-4 flex items-center gap-2">
+        <input id="message-input" type="text" placeholder="Type a message..." class="flex-1 px-4 py-2 border rounded" required />
+        <input type="file" id="image-input" accept="image/*" class="hidden">
+        <label for="image-input" class="cursor-pointer text-[#29622E] hover:underline">📎</label>
+        <button class="bg-[#29622E] text-white px-4 py-2 rounded hover:bg-[#1f4d21]">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script>
+    const chatBox = document.getElementById("chat-box");
+    const messageInput = document.getElementById("message-input");
+    const messageForm = document.getElementById("message-form");
+    const userList = document.getElementById("user-list");
+    const chatWith = document.getElementById("chat-with");
+    const userRole = "{{user_role}}";
+    let isDoctor = false;
+    if (userRole === "doctor"){
+        isDoctor = true;
+    }
+
+    let selectedReceiver = null;
+
+    async function loadUsers() {
+      const response = await fetch("/api/get-contacts/");
+      const data = await response.json();
+
+      userList.innerHTML = "";
+      data.contacts.forEach(user => {
+        const li = document.createElement("li");
+        li.className = "cursor-pointer p-2 rounded hover:bg-green-50 text-sm";
+        li.innerText = user.name;
+        li.dataset.email = user.email;
+        li.onclick = () => {
+          selectedReceiver = user.email;
+          chatWith.innerText = "Chatting with: " + user.name;
+          const displayName = isDoctor ? user.name:`Dr. ${user.name}`;
+          const profileUrl = isDoctor ? `/viewPatientProfile/${user.email}` : `/docProfile/${user.email}`;
+          chatWith.innerHTML = `Chatting with: <a href="${profileUrl}" class="text-[#29622E] hover:underline" target="_blank">${displayName}</a>`;
+
+          loadMessages(selectedReceiver);
+        };
+        userList.appendChild(li);
+      });
+    }
+
+    async function loadMessages(receiverEmail) {
+      const res = await fetch(`/api/get-messages/${receiverEmail}/`);
+      console.log(res);
+      const data = await res.json();
+      console.log(data);
+      chatBox.innerHTML = "";
+
+      data.messages.forEach(msg => {
+        const bubble = document.createElement("div");
+        bubble.className = `p-2 rounded-md max-w-[70%] text-sm ${
+          msg.sender === data.current_user ? "bg-green-100 self-end text-right ml-auto" : "bg-white border"
+        }`;
+        bubble.innerHTML = `
+        ${msg.image_url ? `<img src="${msg.image_url}" class="mb-2 rounded-md max-w-full max-h-60" />` : ""}
+        <p>${msg.content}</p>
+        <p class="text-gray-400 text-xs mt-1">${msg.timestamp}</p>
+        `;
+        chatBox.appendChild(bubble);
+      });
+
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    messageForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      if (!selectedReceiver) return alert("Please select a user first!");
+
+      const content = messageInput.value;
+      const imageInput = document.getElementById("image-input");
+
+      const formData = new FormData();
+      formData.append("receiver", selectedReceiver);
+      formData.append("content", content);
+      if (imageInput.files.length > 0) {
+        formData.append("image", imageInput.files[0]);
+      }
+
+      const res = await fetch("/api/send-message/", {
+        method: "POST",
+        body: formData
+      });
+
+      if (res.ok) {
+        messageInput.value = "";
+        imageInput.value = "";
+        loadMessages(selectedReceiver);
+      }
+    });
+
+    loadUsers();
+  </script>
+
+</body>
+</html>
