@@ -98,13 +98,12 @@ urlpatterns = [
     path("api/patient-records/<str:patient_email>/", views.get_detailed_patient_records),
     # Message and chat functionality
     path('chats/', views.chatPage),
-    path("api/chat/<str:receiver_email>/", views.get_private_chat),
-    path("api/chat/send/", views.send_private_message),
-    path("api/group/<str:dept_name>/", views.get_group_chat),
-    path("api/group/send/", views.send_group_message),
     path('api/get-contacts/', views.get_contacts, name='get_contacts'),
     path('api/get-messages/<str:receiver_email>/', views.get_messages, name='get_messages'),
     path('api/send-message/', views.send_message, name='send_message'),
+    # Chat in group
+    path('api/send-group-message/', views.send_group_message, name='send_group_message'),
+    path('api/get-group-messages/<str:department>/', views.get_group_messages, name='get_group_messages'),
     
     # path('create-user/', create_user_view, name='create-user')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

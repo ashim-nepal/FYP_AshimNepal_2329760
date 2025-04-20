@@ -24,6 +24,13 @@
       <ul id="user-list" class="space-y-2 max-h-[500px] overflow-y-auto">
         <!-- JS Injected Users -->
       </ul>
+      {% if user_role == 'doctor' %}
+        <aside class="bg-white p-4 rounded shadow-md col-span-1 mt-6">
+          <h2 class="text-[#29622E] font-semibold mb-2">Department Chat</h2>
+          <button onclick="openGroupChat()" class="w-full bg-[#29622E] text-white px-4 py-2 rounded hover:bg-[#1f4d21]">Open Group Chat</button>
+        </aside>
+      {% endif %}
+
     </aside>
 
     <!-- Chat Section -->
@@ -49,6 +56,8 @@
   </main>
 
   <script>
+
+    /*
     const chatBox = document.getElementById("chat-box");
     const messageInput = document.getElementById("message-input");
     const messageForm = document.getElementById("message-form");
@@ -135,6 +144,192 @@
     });
 
     loadUsers();
+
+    let department = "{{ doctor_department }}";
+    console.log("department is: "+department);
+
+function openGroupChat() {
+  chatWith.innerText = `Group: ${department}`;
+  selectedReceiver = null;
+  loadGroupMessages();
+
+  messageForm.onsubmit = async function (e) {
+    e.preventDefault();
+    const content = messageInput.value;
+    const imageInput = document.getElementById("image-input");
+
+    const formData = new FormData();
+    formData.append("department", department);
+    formData.append("content", content);
+    if (imageInput.files.length > 0) {
+      formData.append("image", imageInput.files[0]);
+    }
+    const res = await fetch("/api/send-group-message/", {
+      method: "POST",
+      body: formData
+    });
+
+    if (res.ok) {
+      messageInput.value = "";
+      imageInput.value = "";
+      loadGroupMessages();
+    }
+    console.log(res);
+  };
+}
+
+async function loadGroupMessages() {
+  const res = await fetch(`/api/get-group-messages/${department}/`);
+  const data = await res.json();
+  chatBox.innerHTML = "";
+  console.log(data);
+  data.messages.forEach(msg => {
+    const bubble = document.createElement("div");
+    bubble.className = `p-2 rounded-md max-w-[70%] text-sm ${
+      msg.sender === data.current_user ? "bg-green-100 self-end text-right ml-auto" : "bg-white border"
+    }`;
+    bubble.innerHTML = `
+      ${msg.image_url ? `<img src="${msg.image_url}" class="mb-2 rounded-md max-w-full max-h-60" />` : ""}
+      <p><strong>${msg.sender}:</strong> ${msg.content}</p>
+      <p class="text-gray-400 text-xs mt-1">${msg.timestamp}</p>
+    `;
+    chatBox.appendChild(bubble);
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+*/ 
+
+const chatBox = document.getElementById("chat-box");
+const messageInput = document.getElementById("message-input");
+const messageForm = document.getElementById("message-form");
+const userList = document.getElementById("user-list");
+const chatWith = document.getElementById("chat-with");
+const userRole = "{{user_role}}";
+const department = "{{ doctor_department }}";
+let isDoctor = userRole === "doctor";
+let selectedReceiver = null;
+let isGroupChat = false; // 🔥 new mode flag
+
+console.log("department is:", department);
+
+// Load Contacts (DMs)
+async function loadUsers() {
+  const response = await fetch("/api/get-contacts/");
+  const data = await response.json();
+  userList.innerHTML = "";
+
+  data.contacts.forEach(user => {
+    const li = document.createElement("li");
+    li.className = "cursor-pointer p-2 rounded hover:bg-green-50 text-sm";
+    li.innerText = user.name;
+    li.dataset.email = user.email;
+    li.onclick = () => {
+      isGroupChat = false; // 🧠 DM mode
+      selectedReceiver = user.email;
+      const displayName = isDoctor ? user.name : `Dr. ${user.name}`;
+      const profileUrl = isDoctor ? `/viewPatientProfile/${user.email}` : `/docProfile/${user.email}`;
+      chatWith.innerHTML = `Chatting with: <a href="${profileUrl}" class="text-[#29622E] hover:underline" target="_blank">${displayName}</a>`;
+      loadMessages(selectedReceiver);
+    };
+    userList.appendChild(li);
+  });
+}
+
+// Load Private Messages
+async function loadMessages(receiverEmail) {
+  const res = await fetch(`/api/get-messages/${receiverEmail}/`);
+  const data = await res.json();
+  chatBox.innerHTML = "";
+
+  data.messages.forEach(msg => {
+    const bubble = document.createElement("div");
+    bubble.className = `p-2 rounded-md max-w-[70%] text-sm ${
+      msg.sender === data.current_user ? "bg-green-100 self-end text-right ml-auto" : "bg-white border"
+    }`;
+    bubble.innerHTML = `
+      ${msg.image_url ? `<img src="${msg.image_url}" class="mb-2 rounded-md max-w-full max-h-60" />` : ""}
+      <p>${msg.content}</p>
+      <p class="text-gray-400 text-xs mt-1">${msg.timestamp}</p>
+    `;
+    chatBox.appendChild(bubble);
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Load Group Messages
+async function loadGroupMessages() {
+  const res = await fetch(`/api/get-group-messages/${department}/`);
+  const data = await res.json();
+  chatBox.innerHTML = "";
+  console.log(data);
+  data.messages.forEach(msg => {
+    const bubble = document.createElement("div");
+    bubble.className = `p-2 rounded-md max-w-[70%] text-sm ${
+      msg.sender === data.current_user ? "bg-green-100 self-end text-right ml-auto" : "bg-white border"
+    }`;
+    bubble.innerHTML = `
+      ${msg.image_url ? `<img src="${msg.image_url}" class="mb-2 rounded-md max-w-full max-h-60" />` : ""}
+      <p><strong>Dr. ${msg.sender_name}:</strong> ${msg.content}</p>
+      <p class="text-gray-400 text-xs mt-1">${msg.timestamp}</p>
+    `;
+    chatBox.appendChild(bubble);
+  });
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
+// Submit Form (shared for DM and Group)
+messageForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const content = messageInput.value;
+  const imageInput = document.getElementById("image-input");
+
+  const formData = new FormData();
+  formData.append("content", content);
+  if (imageInput.files.length > 0) {
+    formData.append("image", imageInput.files[0]);
+  }
+
+  let url = "";
+  if (isGroupChat) {
+    formData.append("department", department);
+    url = "/api/send-group-message/";
+  } else {
+    if (!selectedReceiver) return alert("Please select a user first!");
+    formData.append("receiver", selectedReceiver);
+    url = "/api/send-message/";
+  }
+
+  console.log(url);
+  console.log(formData);
+
+  const res = await fetch(url, {
+    method: "POST",
+    body: formData
+  });
+
+  if (res.ok) {
+    messageInput.value = "";
+    imageInput.value = "";
+    isGroupChat ? loadGroupMessages() : loadMessages(selectedReceiver);
+  }
+});
+
+// Button: Open Group Chat
+function openGroupChat() {
+  isGroupChat = true;
+  selectedReceiver = null;
+  chatWith.innerText = `Group: ${department}`;
+  loadGroupMessages();
+}
+
+// 👟 Init
+loadUsers();
+
+
   </script>
 
 </body>

@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews, Prescriptions, TestResults, TestBooking, HealthPackageBookings, Messages, ChatGroup
+from .models import HospitalBranches, Users, Doctors, Departments, Patients, HealthPackages, TestCentre, Banners, DoctorAvailability, Appointments, Reviews, Prescriptions, TestResults, TestBooking, HealthPackageBookings, Messages, ChatGroup, GroupMessage
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -2101,8 +2101,13 @@ def chatPage(request):
     user_role = request.session.get('user_role')
     user_email = request.session.get('user_email')
     print(user_role)
+    if user_role == 'doctor':
+        doctor = get_object_or_404(Doctors, email=user_email)
+        doctor_dept = doctor.department
+    else:
+        doctor_dept = ""
     
-    return render(request, 'chat.html', {'user_role':user_role, 'user_email':user_email}) 
+    return render(request, 'chat.html', {'user_role':user_role, 'user_email':user_email, 'doctor_department': doctor_dept}) 
 
 @csrf_exempt
 def get_contacts(request):
@@ -2197,101 +2202,42 @@ def send_message(request):
 
 
 
-# @csrf_exempt
-# def send_message(request):
-#     if request.method == "POST":
-#         user_email = request.session.get('user_email')
-#         sender = get_object_or_404(Users, email=user_email)
-#         receiver_email = request.POST.get("receiver")
-#         content = request.POST.get("content", "")
-#         image = request.FILES.get("image")
-
-#         receiver = get_object_or_404(Users, email=receiver_email)
-
-#         if image:
-#             file_path = default_storage.save("chat_images/" + image.name, image)
-#             content += f'\n[Image: /media/{file_path}]'
-
-#         Messages.objects.create(sender=sender, receiver=receiver, content=content)
-
-#         return JsonResponse({"message": "Sent"})
-#     return JsonResponse({"error": "Invalid request"}, status=400)
-
-
+#### Group for doctors 
 
 @csrf_exempt
-def get_private_chat(request, receiver_email):
-    sender = request.user
-    receiver = get_object_or_404(Users, email=receiver_email)
+def get_group_messages(request, department):
+    user_info = request.session.get('user_email')
+    user = get_object_or_404(Users, email=user_info)
+    messages = GroupMessage.objects.filter(department_group=department).order_by("timestamp")
+    data = []
 
-    messages = Messages.objects.filter(
-        sender__in=[sender, receiver],
-        receiver__in=[sender, receiver],
-        group__isnull=True
-    ).order_by("timestamp")
-
-    data = [
-        {
-            "sender": msg.sender.email,
-            "receiver": msg.receiver.email,
+    for msg in messages:
+        user_detail = get_object_or_404(Users, email=msg.sender)
+        data.append({
+            "sender_name": user_detail.name,
+            "sender":msg.sender,
             "content": msg.content,
-            "image": msg.image.url if msg.image else None,
-            "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        } for msg in messages
-    ]
-    return JsonResponse({"messages": data})
-
-
-@csrf_exempt
-def send_private_message(request):
-    if request.method == "POST":
-        sender = request.user
-        data = request.POST
-
-        receiver_email = data.get("receiver")
-        content = data.get("content", "")
-        image = request.FILES.get("image")
-
-        receiver = get_object_or_404(Users, email=receiver_email)
-
-        Messages.objects.create(sender=sender, receiver=receiver, content=content, image=image)
-        return JsonResponse({"message": "Message sent!"})
-    return JsonResponse({"error": "Invalid method"}, status=400)
-
-
-@csrf_exempt
-def get_group_chat(request, dept_name):
-    sender = request.user
-    group = get_object_or_404(ChatGroup, department=dept_name)
-
-    messages = Messages.objects.filter(group=group).order_by("timestamp")
-
-    data = [
-        {
-            "sender": msg.sender.name,
-            "content": msg.content,
-            "image": msg.image.url if msg.image else None,
-            "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M:%S")
-        } for msg in messages
-    ]
-    return JsonResponse({"messages": data})
+            "timestamp": msg.timestamp.strftime("%Y-%m-%d %H:%M"),
+            "image_url": msg.image.url if msg.image else None,
+        })
+    return JsonResponse({"messages": data, "current_user": user.email})
 
 
 @csrf_exempt
 def send_group_message(request):
     if request.method == "POST":
-        sender = request.user
-        data = request.POST
-
-        department = data.get("department")
-        content = data.get("content", "")
+        
+        sender_email = request.session.get('user_email')
+        department = request.POST.get("department")
+        print(department)
+        content = request.POST.get("content", "")
+        print(content)
         image = request.FILES.get("image")
+        print("fine2")
 
-        group = get_object_or_404(ChatGroup, department=department)
-        Messages.objects.create(sender=sender, group=group, content=content, image=image)
-        return JsonResponse({"message": "Group message sent!"})
-    return JsonResponse({"error": "Invalid method"}, status=400)
-
+        GroupMessage.objects.create(sender=sender_email, department_group=department, content=content, image=image)
+        return JsonResponse({"message": "Group message sent."}, status=200)
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 # def create_user_view(request):

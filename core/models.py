@@ -213,6 +213,20 @@ class Appointments(models.Model):
 
 
 
+
+
+class GroupMessage(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    sender = models.CharField(max_length=255) 
+    department_group = models.CharField(max_length=255) 
+    content = models.TextField(blank=True)
+    image = models.ImageField(upload_to='chat_images/', null=True, blank=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.name} -> {self.department_group.department}"
+
+
 class ChatGroup(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     department = models.CharField(max_length=100)
@@ -374,4 +388,3 @@ class WorkflowAnalytics(models.Model):
 
     def __str__(self):
         return f"Analytics - {self.user.name}"
-
