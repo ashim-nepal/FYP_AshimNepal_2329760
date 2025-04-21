@@ -1269,6 +1269,27 @@ def doc_profile(request, doctor_email):
 
 
 
+@csrf_exempt
+def send_emergency_link(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            patient_email = data["patient_email"]
+            meeting_link = data["meeting_link"]
+            appointment_id = data["appointment_id"]
+
+            subject = "Online Appointment Meeting Link"
+            message = f"Your Online appointment meeting link is: {meeting_link}\n\nPlease be ready at the scheduled time."
+            from_email = "noreply@syncHealth.com"
+            recipient_list = [patient_email]
+
+            send_mail(subject, message, from_email, recipient_list)
+            return JsonResponse({"message": "Link sent successfully!"})
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500)
+
+
+
 def generate_time_slots(start_time, end_time, break_start, break_end, interval=20):
     if start_time is None or end_time is None:
         return [] 

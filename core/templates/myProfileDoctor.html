@@ -145,6 +145,7 @@
                 <th class="border px-4 py-2">Patient</th>
                 <th class="border px-4 py-2">Date</th>
                 <th class="border px-4 py-2">Time</th>
+                <th class="border px-4 py-2">Meeting Type</th>
                 <th class="border px-4 py-2">Prescription</th>
                 <th class="border px-4 py-2">Actions</th>
             </tr>
@@ -218,6 +219,19 @@
   </div>
 </div>
 
+
+
+<!-- Emergency Meeting Link Modal -->
+<div id="emergency-modal" class="fixed inset-0 hidden bg-black bg-opacity-50 flex justify-center items-center z-50">
+  <div class="bg-white p-6 rounded-lg max-w-md w-full">
+    <h2 class="text-lg font-bold text-[#29622E] mb-4">Enter Online Meeting Link</h2>
+    <input type="text" id="meeting-link-input" class="w-full border p-2 rounded mb-4" placeholder="https://meet.example.com/...">
+    <div class="flex justify-end gap-3">
+      <button onclick="sendEmergencyLink()" class="bg-green-600 text-white px-4 py-2 rounded">Send</button>
+      <button onclick="closeEmergencyModal()" class="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
+    </div>
+  </div>
+</div>
 
 
 
@@ -341,6 +355,10 @@
           }
   
           filteredAppointments.forEach((appointment) => {
+
+            
+
+
               let row = `
                   <tr class="border-b">
                       <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/"> ${appointment.patient_email}</a></td>
@@ -424,11 +442,19 @@
                 let completedColor = (disabled) ? "gray" : "green";
                 let cancelledColor = (disabled) ? "gray" : "red";
                 
+                let emergencyCell = appointment.is_emergency
+        ? `<td class="px-4 py-2">
+             <button onclick="openLinkModal('${appointment.id}', '${appointment.patient_email}')" 
+                     class="text-red-600 font-semibold underline">🚨 Emergency</button>
+           </td>`
+        : `<td class="px-4 py-2">Regular</td>`;
+
                 content += `
                       <tr class="border-b">
                       <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/">${appointment.patient_email}</a></td>
                       <td class="px-4 py-2">${appointment.appointment_date}</td>
                       <td class="px-4 py-2">${appointment.appointment_time}</td>
+                      ${emergencyCell}
                       <td class="px-4 py-2">
                         <button onclick="openPrescription('${appointment.id}', '${appointment.appointment_date}')" 
                           style="background: none; border: none;">
@@ -693,6 +719,48 @@ function searchPatient() {
     })
     .then(response => response.json())
     .then(data => alert("Past records fetched!"));
+}
+
+
+let currentEmergencyId = null;
+let currentPatientEmail = null;
+
+function openLinkModal(id, patientEmail) {
+  currentEmergencyId = id;
+  currentPatientEmail = patientEmail;
+  document.getElementById("meeting-link-input").value = "";
+  document.getElementById("emergency-modal").classList.remove("hidden");
+}
+
+function closeEmergencyModal() {
+  document.getElementById("emergency-modal").classList.add("hidden");
+}
+
+async function sendEmergencyLink() {
+  const link = document.getElementById("meeting-link-input").value.trim();
+  if (!link) return alert("Please enter a valid meeting link.");
+
+  const response = await fetch("/api/send-emergency-link/", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+    body: JSON.stringify({
+      appointment_id: currentEmergencyId,
+      patient_email: currentPatientEmail,
+      meeting_link: link
+    })
+  });
+
+  const result = await response.json();
+  if (response.ok) {
+    alert("Meeting link sent successfully!");
+    closeEmergencyModal();
+  } else {
+    alert("Error sending link: " + result.error);
+  }
+}
+
+function getCSRFToken() {
+  return document.cookie.split("; ").find(row => row.startsWith("csrftoken="))?.split("=")[1];
 }
 
 
