@@ -80,6 +80,9 @@
         <p class="mb-4"><span class="font-bold">Education:</span> {{doc.education}}</p>
         <p class="mb-4"><span class="font-bold">Hospitals Worked:</span> {{doc.hospitals_worked }}</p>
         <p class="mb-4"><span class="font-bold">Achievements:</span> {{doc.achievements}}</p>
+        {% for doctor in patients.assigned_doctors_data %}
+          <span> {{doctor.email}}</span>{% if not forloop.last %}, {% endif %}
+      {% endfor %} 
         <p class="font-bold mb-2">Working Time:</p>
 
         <div class="overflow-x-auto">
@@ -264,7 +267,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let response = await fetch("/api/book-appointment/", {
             method: "POST",
             headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
-            body: JSON.stringify({ doctor_email: doctorEmail, appointment_date: selectedDate, appointment_time: selectedTime })
+            body: JSON.stringify({ doctor_email: doctorEmail, appointment_date: selectedDate, appointment_time: selectedTime, is_emergency:false })
         });
 
         let result = await response.json();
@@ -339,6 +342,7 @@ const emergencyBtn = document.querySelector(".emergency_booking");
     });
   }
 
+/*
   emergencyBookBtn.addEventListener("click", async () => {
     if (!selectedEmergencyDate || !selectedEmergencyTime) return;
     if (confirm(`Confirm booking for ${selectedEmergencyDate} at ${selectedEmergencyTime}?`)) {
@@ -367,6 +371,49 @@ const emergencyBtn = document.querySelector(".emergency_booking");
     }
   });
 
+*/
+
+const assignedDoctorEmails = [
+{% for doctor in patients.assigned_doctors_data %}
+  "{{ doctor.email }}"{% if not forloop.last %}, {% endif %}
+{% endfor %}
+];
+const currentDoctorEmail = "{{ doc.email }}";
+
+emergencyBookBtn.addEventListener("click", async () => {
+if (!selectedEmergencyDate || !selectedEmergencyTime) return;
+
+if (!assignedDoctorEmails.includes(currentDoctorEmail)) {
+  alert("❌ You are not assigned to this doctor. Emergency booking denied.");
+  return;
+}
+
+if (confirm(`Confirm booking for ${selectedEmergencyDate} at ${selectedEmergencyTime}?`)) {
+  const logged_in = "{{logged_in}}";
+  if (logged_in == "True") {
+    let response = await fetch("/api/book-appointment/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+      body: JSON.stringify({
+        doctor_email: currentDoctorEmail,
+        appointment_date: selectedEmergencyDate,
+        appointment_time: selectedEmergencyTime,
+        is_emergency: true
+      })
+    });
+
+    let result = await response.json();
+    if (response.ok) {
+      alert("✅ Emergency appointment booked successfully!");
+      toggleEmergencyModal();
+    } else {
+      alert("Booking failed: " + result.error);
+    }
+  } else {
+    alert("{{msg}}");
+  }
+}
+});
 
 
 

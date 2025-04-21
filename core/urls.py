@@ -96,6 +96,8 @@ urlpatterns = [
     path('api/prescriptions/<str:patient_email>/', views.prescriptions_view),
     path('api/patient-history/<str:patient_email>/', views.patient_history),
     path("api/patient-records/<str:patient_email>/", views.get_detailed_patient_records),
+    path("api/get-pending-appointments/", views.get_pending_appointments),
+    path("api/cancel-appointment/", views.cancel_appointment),
     # Message and chat functionality
     path('chats/', views.chatPage),
     path('api/get-contacts/', views.get_contacts, name='get_contacts'),
@@ -104,7 +106,7 @@ urlpatterns = [
     # Chat in group
     path('api/send-group-message/', views.send_group_message, name='send_group_message'),
     path('api/get-group-messages/<str:department>/', views.get_group_messages, name='get_group_messages'),
-    
+
     # path('create-user/', create_user_view, name='create-user')
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

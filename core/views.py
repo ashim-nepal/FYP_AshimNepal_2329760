@@ -1241,6 +1241,8 @@ def doc_profile(request, doctor_email):
     try:
         patient_id = request.session.get('user_id')
         patient = Users.objects.get(id=patient_id)
+        
+        
     except:
         patient_id = None
         patient = None
@@ -1255,6 +1257,7 @@ def doc_profile(request, doctor_email):
         hospital_branch = None
     try:
         patient_val = Patients.objects.get(email=user_email)
+        patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
     except Patients.DoesNotExist:
         patient_val = None
         
@@ -2086,6 +2089,48 @@ def get_detailed_patient_records(request, patient_email):
     }, encoder=DjangoJSONEncoder)
 
 
+
+def get_pending_appointments(request):
+    user_email = request.session.get("user_email")
+    appointments = Appointments.objects.filter(patient=user_email, status="Pending")
+    tests = TestBooking.objects.filter(patient=user_email, status="Pending")
+
+    appointment_data = [{
+        "id": str(a.id),
+        "doctor": a.doctor,
+        "date": a.appointment_date.strftime("%Y-%m-%d"),
+        "time": a.appointment_time.strftime("%H:%M")
+    } for a in appointments]
+
+    test_data = [{
+        "id": str(t.id),
+        "department": t.test_department,
+        "date": t.booking_date.strftime("%Y-%m-%d")
+    } for t in tests]
+
+    return JsonResponse({"appointments": appointment_data, "tests": test_data}, status=200)
+
+
+@csrf_exempt
+def cancel_appointment(request):
+    data = json.loads(request.body)
+    appointment_id = data.get("id")
+    appt_type = data.get("type")
+
+    try:
+        if appt_type == "doctor":
+            Appointments.objects.filter(id=appointment_id, status="Pending").delete()
+        elif appt_type == "test":
+            TestBooking.objects.filter(id=appointment_id, status="Pending").delete()
+        else:
+            return JsonResponse({"error": "Invalid type"}, status=400)
+
+        return JsonResponse({"message": "Appointment cancelled successfully."}, status=200)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
 ######## Messages / Chat #############
 
 @csrf_exempt
@@ -2238,6 +2283,11 @@ def send_group_message(request):
         GroupMessage.objects.create(sender=sender_email, department_group=department, content=content, image=image)
         return JsonResponse({"message": "Group message sent."}, status=200)
     return JsonResponse({"error": "Invalid request"}, status=400)
+
+
+
+
+
 
 
 # def create_user_view(request):

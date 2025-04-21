@@ -55,6 +55,10 @@
         <button onclick="loadPatientHistory('{{ patients.email }}')" class="mt-6 bg-[#29622E] text-white px-4 py-2 rounded-lg shadow hover:bg-[#35993E]">
           View All Detailed Records
         </button>
+        <button onclick="toggleAppointmentModal()" class="bg-600 bg-[#29622E] text-white px-4 py-2 rounded shadow hover:bg-[#35993E]">
+          Reserved Appointments
+        </button>
+
         <div class="space-y-4 hidden">
           <!-- Each Record -->
           <a href="#" class="block bg-white border border-gray-200 shadow-sm p-4 rounded-lg hover:shadow-md transition">
@@ -107,6 +111,16 @@
     <h2 class="text-xl font-bold text-[#29622E] mb-4">Detailed Record</h2>
     <div id="record-details" class="space-y-4"></div>
     <button onclick="printRecord()" class="bg-[#29622E] text-white px-6 py-2 rounded-lg shadow hover:bg-[#35993E] mt-4">Print Record</button>
+  </div>
+</div>
+
+
+<!-- Modal for reserved bookings -->
+<div id="cancelAppointmentsModal" class="hidden fixed inset-0 bg-black bg-opacity-40 z-50 flex items-center justify-center">
+  <div class="bg-white rounded-lg shadow-lg w-full max-w-3xl p-6 relative overflow-y-auto max-h-[80vh]">
+    <button onclick="toggleAppointmentModal()" class="absolute top-3 right-3 text-xl">✖</button>
+    <h2 class="text-xl font-bold text-[#29622E] mb-4">Your Reserved Appointments</h2> 
+    <div id="appointments-list" class="space-y-4"></div>
   </div>
 </div>
 
@@ -260,6 +274,67 @@
       win.close();
     }
 
+
+    function toggleAppointmentModal() {
+      document.getElementById("cancelAppointmentsModal").classList.toggle("hidden");
+      if (!document.getElementById("cancelAppointmentsModal").classList.contains("hidden")) {
+        loadPendingAppointments();
+      }
+    }
+    
+    async function loadPendingAppointments() {
+      const res = await fetch("/api/get-pending-appointments/");
+      const data = await res.json();
+      const container = document.getElementById("appointments-list");
+      container.innerHTML = "";
+    
+      if (data.appointments.length === 0 && data.tests.length === 0) {
+        container.innerHTML = `<p class="text-gray-600">No pending appointments found.</p>`;
+        return;
+      }
+    
+      data.appointments.forEach(appt => {
+        container.innerHTML += `
+          <div class="border p-4 rounded-lg">
+            <p><strong>Doctor:</strong> ${appt.doctor}</p>
+            <p><strong>Date:</strong> ${appt.date}</p>
+            <p><strong>Time:</strong> ${appt.time}</p>
+            <button onclick="cancelAppointment('${appt.id}', 'doctor')" class="bg-red-500 text-white px-3 py-1 mt-2 rounded hover:bg-red-700">Cancel</button>
+          </div>`;
+      });
+    
+      data.tests.forEach(test => {
+        container.innerHTML += `
+          <div class="border p-4 rounded-lg">
+            <p><strong>Test Centre:</strong> ${test.department}</p>
+            <p><strong>Date:</strong> ${test.date}</p>
+            <button onclick="cancelAppointment('${test.id}', 'test')" class="bg-red-500 text-white px-3 py-1 mt-2 rounded hover:bg-red-700">Cancel</button>
+          </div>`;
+      });
+    }
+    
+    async function cancelAppointment(id, type) {
+      const confirmCancel = confirm("Are you sure you want to cancel this appointment?");
+      if (!confirmCancel) return;
+    
+      const res = await fetch(`/api/cancel-appointment/`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
+        body: JSON.stringify({ id, type })
+      });
+    
+      const result = await res.json();
+      if (res.ok) {
+        alert(result.message);
+        loadPendingAppointments();
+      } else {
+        alert(result.error);
+      }
+    }
+
+    function getCSRFToken() {
+      return document.cookie.split("; ").find(row => row.startsWith("csrftoken="))?.split("=")[1];
+    }
 
       // Confirm Logout
   function confirmLogout() {
