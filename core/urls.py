@@ -85,7 +85,10 @@ urlpatterns = [
     
     # Health Packages
     path("health-package/<uuid:package_id>/", views.health_packages, name="health_packages"),
-    path('api/book-health-package/', views.book_health_package, name = "book_healthPackage"),
+   path("api/book-health-package/", views.book_health_package),
+    # path("payment/success/", views.khalti_payment_success), 
+    # path('api/book-health-package/', views.book_health_package, name = "book_healthPackage"),
+    
     # Reset PAssword and change password
     path("myAccPage/", views.myAccPage, name="myAccPage"),
     path("forgot-password/", views.forgotPass, name="forgotPassword"),

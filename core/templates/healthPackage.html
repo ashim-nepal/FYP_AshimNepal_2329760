@@ -79,12 +79,19 @@
                             patient_email: "{{user_email}}",
                             branch: "{{hlt_pkg.branch}}",
                             test_id: "{{hlt_pkg.id}}",
+                            price: "{{hlt_pkg.price}}",
                             test_date: selectedDate
                         })
                     })
                     .then(response => response.json())
-                    .then(data => alert(data.message || data.error))
-                    .catch(err => console.error("Error:", err));
+                    .then(data => {
+                        if (data.redirect_url) {
+                            window.location.href = data.redirect_url;
+                        } else {
+                            alert(data.error || "Failed to initiate payment");
+                        }
+                    });
+                    
                 }
             });
         });

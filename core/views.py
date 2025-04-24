@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-import json, uuid, datetime, io, string, random
+import json, uuid, datetime, io, string, random, requests
 from datetime import datetime, timedelta, date
 from .serializers import HospitalBranchSerializer, UserSerializer, DoctorAvailabilitySerializer, AppointmentSerializer
 from django.http import JsonResponse, HttpResponse
@@ -1803,86 +1803,142 @@ def health_packages(request, package_id):
 
 
 
+
 @csrf_exempt
 def book_health_package(request):
-    if request.method == "POST":
+    if request.method != "POST":
+        return JsonResponse({"error": "Invalid request method"}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        patient_email = data.get("patient_email")
+        test_id = data.get("test_id")
+        branch = data.get("branch")
+        test_date = data.get("test_date")
+
+        if not all([patient_email, test_id, branch, test_date]):
+            return JsonResponse({"error": "Missing required fields"}, status=400)
+
         try:
-            data = json.loads(request.body)
-            patient_email = data.get("patient_email")
-            test_id = data.get("test_id")
-            branch = data.get("branch")
-            test_date = data.get("test_date")
+            test_date_obj = datetime.strptime(test_date, "%Y-%m-%d").date()
+        except ValueError:
+            return JsonResponse({"error": "Invalid date format"}, status=400)
 
-            if not all([patient_email, test_id, branch, test_date]):
-                return JsonResponse({"error": "Missing required fields"}, status=400)
+        try:
+            patient = Users.objects.get(email=patient_email)
+        except Users.DoesNotExist:
+            return JsonResponse({"error": "Invalid patient email"}, status=404)
 
-            # Validate date
-            try:
-                test_date_obj = datetime.strptime(test_date, "%Y-%m-%d").date()
-            except ValueError:
-                return JsonResponse({"error": "Invalid date format"}, status=400)
+        try:
+            health_package = HealthPackages.objects.get(id=test_id)
+        except HealthPackages.DoesNotExist:
+            return JsonResponse({"error": "Invalid package ID"}, status=404)
 
-            # Get user and package
-            try:
-                patient = Users.objects.get(email=patient_email)
-            except Users.DoesNotExist:
-                return JsonResponse({"error": "Invalid patient email"}, status=404)
+        # Check for duplicate booking on same date
+        if HealthPackageBookings.objects.filter(patient=patient.email, test_date=test_date_obj).exists():
+            return JsonResponse({"error": "You already booked a package on this date."}, status=400)
 
-            try:
-                health_package = HealthPackages.objects.get(id=test_id)
-            except HealthPackages.DoesNotExist:
-                return JsonResponse({"error": "Invalid package ID"}, status=404)
+        if HealthPackageBookings.objects.filter(test=health_package, test_date=test_date_obj).count() >= 20:
+            return JsonResponse({"error": "Booking limit reached for this package on the selected date."}, status=400)
 
-            # Check if patient already booked this package on the same date
-            if HealthPackageBookings.objects.filter(patient=patient.email, test_date=test_date_obj).exists():
-                return JsonResponse({"error": "You already booked this package on this date."}, status=400)
+        amount_paisa = int(health_package.price * 100)
 
-            # Limit 20 bookings per day
-            if HealthPackageBookings.objects.filter(test=health_package, test_date=test_date_obj).count() >= 20:
-                return JsonResponse({"error": "Booking limit reached for this package on the selected date."}, status=400)
+        # Initiate Khalti Payment
+        payload = {
+            "return_url": "http://127.0.0.1:8000/",
+            "website_url": "http://127.0.0.1:8000/",
+            "amount": amount_paisa,
+            "purchase_order_id": str(random.randint(10000, 99999)),
+            "purchase_order_name": f"Package: {health_package.name}",
+            "customer_info": {
+                "name": patient.name,
+                "email": patient.email,
+                "phone": ""
+            },
+            "amount_breakdown": [{"label": "Health Package", "amount": amount_paisa}],
+            "product_details": [{
+                "identity": str(test_id),
+                "name": health_package.name,
+                "total_price": amount_paisa,
+                "quantity": 1,
+                "unit_price": amount_paisa
+            }],
+            "merchant_username": "sync Health",
+            "merchant_extra": f"{patient_email}|{test_id}|{test_date}|{branch}"
+        }
 
-            # Create booking
-            booking = HealthPackageBookings.objects.create(
-                test=health_package, patient=patient.email, branch=branch, test_date=test_date_obj, status="Pending"
-            )
-            
-            keyword = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
-            
-             # Generate PDF
-            buffer = io.BytesIO()
-            p = canvas.Canvas(buffer, pagesize=A4)
-            p.setFont("Helvetica-Bold", 16)
-            p.drawString(100, 820, "Health Package Receipt")
-            p.setFont("Helvetica", 12)
-            p.drawString(100, 790, f"Patient Name: {patient.name}")
-            p.drawString(100, 770, f"Patient Email: {patient.email}")
-            p.drawString(100, 750, f"Package: {health_package.name}")
-            p.drawString(100, 730, f"Appointment Date: {test_date_obj}")
-            p.drawString(100, 710, f"Amount Paid: Rs. {health_package.price}")
-            p.drawString(100, 690, f"Receipt Code: {keyword}")
-            p.drawString(100, 640, f"'Thankyou for choosing syncHealth!'")
-            p.showPage()
-            p.save()
+        headers = {
+            "Authorization": "key b7df7474a5044e6498d56cb3a32d8fc1",
+            "Content-Type": "application/json"
+        }
 
-            buffer.seek(0)
-            pdf_data = buffer.getvalue()
-            buffer.close()
-            
-            # Send Email
-            email = EmailMessage(
-                "Your Health Package Receipt",
-                "Please find attached your receipt for the health package booked.\n\nYou need to show it on reception to be escorted further.",
-                to=[patient.email]
-            )
-            email.attach(f"Receipt_{keyword}.pdf", pdf_data, "application/pdf")
-            email.send()
+        response = requests.request("POST","https://dev.khalti.com/api/v2/epayment/initiate/", headers=headers, json=payload)
+        if response.status_code != 200:
+            print(response)
+            return JsonResponse({"error": "Failed to initiate Khalti payment"}, status=400)
 
-            return JsonResponse({"message": "Booking successful! Your receipt has been mailed to you!", "booking_id": str(booking.id)})
+        res_data = response.json()
+        request.session["khalti_health_package_payment"] = {
+            "pidx": res_data["pidx"],
+            "email": patient_email,
+            "test_id": test_id,
+            "test_date": test_date,
+            "branch": branch
+        }
+        
+        
+        
+        
+        
+        
+        booking = HealthPackageBookings.objects.create(
+            test=health_package,
+            patient=patient.email,
+            branch=branch,
+            test_date=test_date,
+            amount = health_package.price,
+            status="Approved"
+        )
+        vat_amt = float(health_package.price)
+        charge = vat_amt - vat_amt * 0.1
+        vat_amt = vat_amt * 0.1
+        total_price = charge + vat_amt
+         
 
-        except json.JSONDecodeError:
-            return JsonResponse({"error": "Invalid JSON format"}, status=400)
+        # Generate Receipt
+        keyword = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        buffer = io.BytesIO()
+        p = canvas.Canvas(buffer, pagesize=A4)
+        p.setFont("Helvetica-Bold", 16)
+        p.drawString(100, 820, "Health Package Receipt")
+        p.setFont("Helvetica", 12)
+        p.drawString(100, 790, f"Patient Name: {patient.name}")
+        p.drawString(100, 770, f"Patient Email: {patient.email}")
+        p.drawString(100, 750, f"Package: {health_package.name}")
+        p.drawString(100, 730, f"Appointment Date: {test_date}")
+        p.drawString(100, 710, f"Vat Included: Rs. {charge}")
+        p.drawString(100, 690, f"Vat Included: Rs. {vat_amt}")
+        p.drawString(100, 670, f"Total Amount Paid: Rs. {total_price}")
+        p.drawString(100, 650, f"Receipt Code: {keyword}")
+        p.drawString(100, 600, "Thank you for choosing syncHealth!")
+        p.showPage()
+        p.save()
 
-    return JsonResponse({"error": "Invalid request method"}, status=405)
+        buffer.seek(0)
+        email = EmailMessage(
+            "Your Health Package Receipt",
+            "Please find your receipt attached. Show it at the hospital.",
+            to=[patient.email]
+        )
+        email.attach(f"Receipt_{keyword}.pdf", buffer.getvalue(), "application/pdf")
+        email.send()
+
+
+        return JsonResponse({"redirect_url": res_data["payment_url"]})
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON format"}, status=400)
+
 
 
 
