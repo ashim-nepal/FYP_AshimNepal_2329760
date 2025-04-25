@@ -265,9 +265,11 @@ class HealthPackages(models.Model):
 class HealthPackageBookings(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     test = models.ForeignKey(HealthPackages, on_delete=models.CASCADE)
+    package_name = models.CharField(max_length=100, default="Health Package Name")
     patient = models.CharField(max_length=100, default="Patient's Email") 
     branch = models.CharField(max_length=100, default="Hospital branch") 
     test_date = models.DateField()
+    receipt_id = models.CharField(max_length=10, unique=True)
     status = models.CharField(max_length=20, choices=[('Pending', 'Pending'), ('Approved', 'Approved'),('Processing', 'Processing'), ('Completed', 'Completed'), ('Cancelled', 'Cancelled')], default='Pending')
     report_file = models.FileField(upload_to='test_reports/', null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2, null=True)

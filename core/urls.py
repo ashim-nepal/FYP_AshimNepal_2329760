@@ -86,6 +86,8 @@ urlpatterns = [
     # Health Packages
     path("health-package/<uuid:package_id>/", views.health_packages, name="health_packages"),
    path("api/book-health-package/", views.book_health_package),
+   path("api/health-bookings/", views.get_health_bookings, name="get_health_bookings"),
+    path("api/update-health-booking-status/", views.update_health_booking_status, name="update_health_booking_status"),
     # path("payment/success/", views.khalti_payment_success), 
     # path('api/book-health-package/', views.book_health_package, name = "book_healthPackage"),
     

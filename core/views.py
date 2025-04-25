@@ -1890,12 +1890,15 @@ def book_health_package(request):
         
         
         
-        
+        # Generate Receipt
+        keyword = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
         booking = HealthPackageBookings.objects.create(
             test=health_package,
+            package_name = health_package.name,
             patient=patient.email,
             branch=branch,
             test_date=test_date,
+            receipt_id = keyword,
             amount = health_package.price,
             status="Approved"
         )
@@ -1905,8 +1908,7 @@ def book_health_package(request):
         total_price = charge + vat_amt
          
 
-        # Generate Receipt
-        keyword = ''.join(random.choices(string.ascii_uppercase + string.digits, k=8))
+        
         buffer = io.BytesIO()
         p = canvas.Canvas(buffer, pagesize=A4)
         p.setFont("Helvetica-Bold", 16)
@@ -1939,6 +1941,63 @@ def book_health_package(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON format"}, status=400)
 
+
+
+def get_health_bookings(request):
+    receipt_id = request.GET.get("receipt_id", "")
+    email = request.GET.get("email", "")
+
+    filters = {}
+    if receipt_id:
+        filters["receipt_id__icontains"] = receipt_id
+    if email:
+        filters["patient__icontains"] = email
+
+    bookings = HealthPackageBookings.objects.filter(**filters)
+
+    data = [{
+        "receipt_id": b.receipt_id,
+        "patient": b.patient,
+        "test_date": b.test_date.strftime("%Y-%m-%d"),
+        "status": b.status,
+        "amount": float(b.amount),
+        "test_name": b.package_name,
+        "branch": b.branch,
+    } for b in bookings]
+
+    return JsonResponse(data, safe=False)
+
+@csrf_exempt
+def update_health_booking_status(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        receipt_id = data.get("receipt_id")
+        new_status = data.get("new_status")
+
+        try:
+            booking = HealthPackageBookings.objects.get(receipt_id=receipt_id)
+            package = booking.package_name
+            branch = booking.branch
+            booking.status = new_status
+            booking.save()
+            
+            email_body = f"Hello,\n\nYour health package, {package} status has been updated to: {new_status}."
+            if new_status == "Completed":
+                email_body += f"\n\nPlease visit the hospital, {branch} reception to collect your report."
+
+
+            send_mail(
+                subject=f"Health Package({package}) Status Updated",
+                message=email_body,
+                from_email="noreply@syncHealth.com",
+                recipient_list=[booking.patient],
+            )
+
+            return JsonResponse({"message": "Status updated and email sent!"})
+        except HealthPackageBookings.DoesNotExist:
+            return JsonResponse({"error": "Booking not found!"}, status=404)
+
+    return JsonResponse({"error": "Invalid request"}, status=400)
 
 
 
