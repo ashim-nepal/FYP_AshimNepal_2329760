@@ -296,6 +296,12 @@ def logout_view(request):
     request.session.flush()
     return redirect('/login/')
 
+# Other pages redirect functions
+def aboutUs(request):
+    return render(request, 'aboutUs.html')
+
+
+
 # Master Admin functions
 # Hospital CRUD
 def get_hospital_branches(request):

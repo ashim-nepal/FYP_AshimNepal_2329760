@@ -1,0 +1,142 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us - syncHealth Hospital</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'css/custom.css' %}">
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- Header -->
+  <header class="bg-700 text-white py-6 shadow-md">
+  </header>
+
+  <!-- Main Content -->
+  <main class="container mx-auto px-4 py-10 space-y-12">
+
+    <!-- Intro -->
+    <section class="text-center">
+      <h2 class="text-4xl font-bold text-green-700 mb-4">About Us</h2>
+      <p class="text-lg max-w-2xl mx-auto text-gray-700">
+        syncHealth Hospital is dedicated to providing compassionate, accessible, high-quality healthcare to communities across Nepal. We empower lives through healing, innovation, and excellence.
+      </p>
+    </section>
+
+    <!-- Mission Vision -->
+    <section class="grid md:grid-cols-2 gap-8">
+      <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-600">
+        <h3 class="text-2xl font-semibold text-green-700 mb-2">Our Mission</h3>
+        <p>To deliver exceptional healthcare services with integrity, professionalism, and respect for all. We strive to create a healthier future through innovation, education, and community involvement.</p>
+      </div>
+      <div class="bg-white p-6 rounded-lg shadow-md border-l-4 border-green-600">
+        <h3 class="text-2xl font-semibold text-green-700 mb-2">Our Vision</h3>
+        <p>To be the most trusted healthcare partner in Nepal and South Asia, recognized for clinical excellence, patient-centered care, and cutting-edge medical research.</p>
+      </div>
+    </section>
+
+    <!-- Services -->
+    <section>
+      <h3 class="text-3xl font-semibold text-green-700 mb-4">What We Offer</h3>
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-white p-5 rounded shadow-md hover:shadow-lg transition">
+          <h4 class="font-bold text-green-600 mb-2">24/7 Emergency Services</h4>
+          <p>Immediate care for all critical conditions with state-of-the-art emergency rooms and expert doctors on call.</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow-md hover:shadow-lg transition">
+          <h4 class="font-bold text-green-600 mb-2">Specialist Departments</h4>
+          <p>From cardiology to neurology, our specialists provide world-class treatment across all major disciplines.</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow-md hover:shadow-lg transition">
+          <h4 class="font-bold text-green-600 mb-2">Teleconsultation</h4>
+          <p>Access care remotely with our easy-to-use telemedicine platform—consult doctors from the comfort of your home.</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow-md hover:shadow-lg transition">
+          <h4 class="font-bold text-green-600 mb-2">Advanced Diagnostics</h4>
+          <p>Equipped with MRI, CT, Ultrasound, and Lab Testing to ensure accurate diagnosis and faster treatment plans.</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow-md hover:shadow-lg transition">
+          <h4 class="font-bold text-green-600 mb-2">In-Patient & ICU</h4>
+          <p>Comfortable rooms, top-tier ICU, and 24/7 monitoring with compassionate nursing care.</p>
+        </div>
+        <div class="bg-white p-5 rounded shadow-md hover:shadow-lg transition">
+          <h4 class="font-bold text-green-600 mb-2">Pharmacy & Labs</h4>
+          <p>On-site pharmacy and diagnostic labs to make your healthcare journey smoother and faster.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Why Choose Us -->
+    <section class="bg-green-100 p-8 rounded-lg">
+      <h3 class="text-3xl font-bold text-green-800 mb-4">Why Choose syncHealth Hospital?</h3>
+      <ul class="list-disc ml-6 text-gray-700 space-y-2">
+        <li>ISO Certified Quality Healthcare</li>
+        <li>Board-Certified Doctors and Nurses</li>
+        <li>Clean, Modern Infrastructure</li>
+        <li>Multi-Language Staff Support</li>
+        <li>Affordable & Transparent Billing</li>
+        <li>Nationwide Branch Network</li>
+      </ul>
+    </section>
+
+    <!-- Branches Section -->
+    <section>
+      <h3 class="text-3xl font-semibold text-[#35993E] text-700 mb-4">Our Branches</h3>
+      <div id="branchesContainer" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- JS Populated -->
+      </div>
+    </section>
+
+    <!-- Contact Us -->
+    <section class="bg-white p-8 rounded-lg shadow-md">
+      <h3 class="text-3xl font-semibold text-green-700 mb-6">Contact Us - syncHealth Head Hospital</h3>
+      <div class="grid md:grid-cols-2 gap-8">
+        <div>
+          <p class="mb-2"><strong>Address:</strong> Ring Road, Kathmandu, Nepal</p>
+          <p class="mb-2"><strong>Phone:</strong> +977-01-4400000</p>
+          <p class="mb-2"><strong>Email:</strong> contact@synchealth.com</p>
+          <p><strong>Working Hours:</strong> 24/7 Open</p>
+        </div>
+        <div>
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3532.121230218495!2d85.31827131501644!3d27.71138338279054!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39eb1978fd0d28a9%3A0xab37a6a6c9d76c9f!2sKathmandu!5e0!3m2!1sen!2snp!4v1612517667431"
+            width="100%" height="250" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-[#35993E] text-white py-6 mt-12 text-center text-sm">
+    &copy; {{ now|date:"Y" }} syncHealth Hospital. All rights reserved.
+  </footer>
+
+  <!-- JS -->
+  <script>
+    async function loadBranches() {
+      try {
+        const res = await fetch("/api/get_all_hospital_branches/");
+        const data = await res.json();
+        const branchesContainer = document.getElementById("branchesContainer");
+
+        data.branches.forEach(branch => {
+          const card = document.createElement("div");
+          card.className = "bg-white p-5 rounded-lg shadow hover:shadow-md transition border-l-4 border-green-600";
+          card.innerHTML = `
+            <h4 class="text-xl font-semibold text-green-700 mb-1">${branch.branch_name}</h4>
+            <p class="text-sm text-gray-700">${branch.branch_location}</p>
+            <p class="text-xs text-gray-500 mt-1">Hospital Branch Code: <b>${branch.branch_code}</b></p>
+          `;
+          branchesContainer.appendChild(card);
+        });
+
+      } catch (err) {
+        console.error("Failed to load branches:", err);
+      }
+    }
+    loadBranches();
+  </script>
+</body>
+</html>
