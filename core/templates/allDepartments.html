@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Hospital Departments</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-gray-100 to-blue-50 min-h-screen font-sans">
+
+  <div class="max-w-7xl mx-auto px-4 py-6">
+    <h1 class="text-4xl font-bold mb-8 text-center text-gray-800">Hospital Departments</h1>
+
+    <!-- Filters -->
+    <div class="flex flex-wrap justify-between items-center mb-6 gap-4">
+        <div class="w-full sm:w-auto">
+        <label for="branchFilter" class="block mb-1 text-sm font-medium text-gray-700">Filter by Branch</label>
+        <select id="branchFilter" class="w-full p-2 border rounded-md">
+            <option value="">All Branches</option>
+        </select>
+        </div>
+    </div>
+  
+
+    <!-- Departments Grid -->
+    <div id="departmentsGrid" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"></div>
+  </div>
+
+  <!-- Department Modal -->
+  <div id="departmentModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div class="bg-white max-w-xl w-full rounded-lg shadow-lg p-6 relative">
+      <button id="closeModal" class="absolute top-2 right-2 text-gray-500 hover:text-red-500 text-2xl">&times;</button>
+      <img id="modalImage" src="" alt="" class="w-full h-64 object-cover rounded-lg mb-4" />
+      <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-2"></h2>
+      <p id="modalBranch" class="text-sm text-gray-500 mb-2"></p>
+      <p id="modalDescription" class="text-gray-700 text-sm"></p>
+    </div>
+  </div>
+
+  <script>
+    let departments = [];
+    let branches = [];
+
+    async function loadDepartments() {
+        try {
+          const depRes= await fetch('/api/get-departments/');
+          const branchRes = await  fetch('/api/get_all_hospital_branches/');
+      
+          const departmentData = await depRes.json();
+          const branchData = await branchRes.json();
+      
+          branches = branchData.branches;
+          console.log(branches);
+      
+          // Map branch_name and location to each department
+          departments = departmentData.departments.map(dept => {
+            const branch = branches.find(b => b.branch_code === dept.branch_id);
+            return {
+              ...dept,
+              image: dept.image || 'department_images/no_image.jpeg',
+              branch_name: branch ? `${branch.branch_name} (${branch.branch_location})` : dept.branch_id
+            };
+          });
+          console.log(departments);
+      
+          populateBranchFilter();
+          renderDepartments(departments);
+      
+        } catch (error) {
+          console.error("Error fetching departments or branches:", error);
+        }
+      }
+
+    function populateBranchFilter() {
+        const filter = document.getElementById("branchFilter");
+        const branchSet = new Set();
+      
+        branches.forEach(branch => {
+          const label = `${branch.branch_name} (${branch.branch_location})`;
+          if (!branchSet.has(label)) {
+            const option = document.createElement("option");
+            option.value = branch.branch_code;
+            option.textContent = label;
+            filter.appendChild(option);
+            branchSet.add(label);
+          }
+        });
+      }
+
+    function renderDepartments(data) {
+      const grid = document.getElementById("departmentsGrid");
+      grid.innerHTML = "";
+
+      if (data.length === 0) {
+        grid.innerHTML = `<p class="col-span-full text-center text-gray-500">No departments found for selected branch.</p>`;
+        return;
+      }
+
+      data.forEach(dept => {
+        const card = document.createElement('div');
+        card.className = "bg-white rounded-lg shadow hover:shadow-xl transition overflow-hidden cursor-pointer";
+        card.innerHTML = `
+          <img src="/media/${dept.image}" alt="${dept.name}" class="w-full h-40 object-cover"/>
+          <div class="p-4">
+            <h3 class="text-lg font-semibold text-gray-800 mb-1">${dept.name}</h3>
+            <p class="text-sm text-gray-500">${dept.branch_name}</p>
+          </div>
+        `;
+        card.onclick = () => showModal(dept);
+        grid.appendChild(card);
+      });
+    }
+
+    function showModal(dept) {
+      document.getElementById("modalImage").src = "/media/" + dept.image;
+      document.getElementById("modalTitle").textContent = dept.name;
+      document.getElementById("modalBranch").textContent = `Branch: ${dept.branch_name}`;
+      document.getElementById("modalDescription").textContent = dept.description || 'No description available.';
+      document.getElementById("departmentModal").classList.remove("hidden");
+    }
+
+    document.getElementById("closeModal").onclick = () => {
+      document.getElementById("departmentModal").classList.add("hidden");
+    };
+
+    document.getElementById("branchFilter").addEventListener("change", function () {
+        const selectedBranchCode = this.value;
+        const filtered = selectedBranchCode
+          ? departments.filter(d => d.branch_id === selectedBranchCode)
+          : departments;
+        renderDepartments(filtered);
+      });
+
+    // Initialize
+    loadDepartments();
+  </script>
+</body>
+</html>

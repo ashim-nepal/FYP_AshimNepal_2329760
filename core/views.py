@@ -302,6 +302,17 @@ def get_hospital_branches(request):
     branches = list(HospitalBranches.objects.values())
     return JsonResponse({'branches': branches}, safe=False)
 
+# Get All Departments
+def get_hospital_branches_json(request):
+    try:
+        branches = HospitalBranches.objects.values()
+        return JsonResponse({"branches": list(branches)}, status=200)
+    except Exception as e:
+        print(e)
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
 # Adding new hospital branch data
 @csrf_exempt
 def add_hospital_branch(request):
@@ -613,11 +624,14 @@ def get_users(request):
 # Get All Departments
 def get_departments(request):
     try:
-        departments = Departments.objects.all().values('id', 'name', 'description', 'branch_id')
+        departments = Departments.objects.all().values('id', 'name', 'description', 'image', 'branch_id')
         return JsonResponse({"departments": list(departments)}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+def display_all_departments(request):
+    return render(request, 'allDepartments.html')
+    
 
 # Edit User (Receptionist or Doctor)
 @csrf_exempt
