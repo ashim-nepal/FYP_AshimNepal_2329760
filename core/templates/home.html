@@ -149,37 +149,28 @@
       <div class="space-y-6 sm:space-y-8 lg:flex lg:items-center lg:space-x-8 lg:space-y-0">
         <!-- Hospital Dropdown -->
         <div class="flex justify-center lg:flex-1">
-          <select class="bg-white text-[#29622E] py-2 px-4 rounded-lg shadow-md focus:outline-none w-full sm:w-auto font-bold">
+          <select id="hospitalSelect" class="bg-white text-[#29622E] py-2 px-4 rounded-lg shadow-md focus:outline-none w-full sm:w-auto font-bold">
             <option value="" disabled selected>Select Hospital</option>
-            <option value="hospital1">Hospital 1</option>
-            <option value="hospital2">Hospital 2</option>
-            <option value="hospital3">Hospital 3</option>
           </select>
         </div>
   
         <!-- Department Dropdown -->
         <div class="flex justify-center lg:flex-1">
-          <select class="bg-white text-[#29622E] py-2 px-4 rounded-lg shadow-md focus:outline-none w-full sm:w-auto font-bold">
+          <select id="departmentSelect" class="bg-white text-[#29622E] py-2 px-4 rounded-lg shadow-md focus:outline-none w-full sm:w-auto font-bold disabled">
             <option value="" disabled selected>Select Department</option>
-            <option value="department1">Department 1</option>
-            <option value="department2">Department 2</option>
-            <option value="department3">Department 3</option>
           </select>
         </div>
   
         <!-- Doctor Dropdown -->
         <div class="flex justify-center lg:flex-1">
-          <select class="bg-white text-[#29622E] py-2 px-4 rounded-lg shadow-md focus:outline-none w-full sm:w-auto font-bold">
+          <select id="doctorSelect" class="bg-white text-[#29622E] py-2 px-4 rounded-lg shadow-md focus:outline-none w-full sm:w-auto font-bold disabled">
             <option value="" disabled selected>Select Doctor</option>
-            <option value="doctor1">Doctor 1</option>
-            <option value="doctor2">Doctor 2</option>
-            <option value="doctor3">Doctor 3</option>
           </select>
         </div>
   
         <!-- Continue Booking Button -->
         <div class="flex justify-center lg:flex-1">
-          <button class="bg-white text-[#29622E] py-3 px-6 rounded-lg text-lg font-bold hover:bg-[#35993E] hover:text-white transition duration-300 w-full sm:w-auto">
+          <button id="continueBookingBtn" class="bg-white text-[#29622E] py-3 px-6 rounded-lg text-lg font-bold hover:bg-[#35993E] hover:text-white transition duration-300 w-full sm:w-auto disabled">
             Continue Booking
           </button>
         </div>
@@ -482,9 +473,106 @@
     });
   });
 
+
+
   
   //testimonials
   
+
+
+  // Dynamic dropdowns
+   let branches = [];
+  let departments = [];
+  let doctors = [];
+
+  const hospitalSelect = document.getElementById("hospitalSelect");
+  const departmentSelect = document.getElementById("departmentSelect");
+  const doctorSelect = document.getElementById("doctorSelect");
+  const continueBookingBtn = document.getElementById("continueBookingBtn");
+
+  document.addEventListener("DOMContentLoaded", async () => {
+    try {
+      const [branchRes, deptRes, doctorRes] = await Promise.all([
+        fetch("/api/get_all_hospital_branches/"),
+        fetch("/api/get-departments/"),
+        fetch("/api/get_doctors/")
+      ]);
+
+      const branchData = await branchRes.json();
+      const deptData = await deptRes.json();
+      const doctorData = await doctorRes.json();
+
+      console.log(branchData);
+      console.log(deptData);
+      console.log(doctorData);
+
+      branches = branchData.branches;
+      departments = deptData.departments;
+      doctors = doctorData.doctors;
+
+      // Populate Hospital dropdown
+      branches.forEach(branch => {
+        const opt = document.createElement("option");
+        opt.value = branch.branch_code;
+        opt.textContent = branch.branch_name;
+        hospitalSelect.appendChild(opt);
+      });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    }
+  });
+
+  hospitalSelect.addEventListener("change", () => {
+    const selectedBranchId = hospitalSelect.value;
+
+    // Filter departments
+    const filteredDepartments = departments.filter(d => d.branch_id == selectedBranchId);
+
+    departmentSelect.innerHTML = `<option value="" disabled selected>Select Department</option>`;
+    filteredDepartments.forEach(dept => {
+      const opt = document.createElement("option");
+      opt.value = dept.name;
+      opt.textContent = dept.name;
+      departmentSelect.appendChild(opt);
+    });
+
+    departmentSelect.disabled = false;
+    doctorSelect.disabled = true;
+    doctorSelect.innerHTML = `<option value="" disabled selected>Select Doctor</option>`;
+    continueBookingBtn.disabled = true;
+  });
+
+  departmentSelect.addEventListener("change", () => {
+    const selectedDeptId = departmentSelect.value;
+    const selectedBranchId = hospitalSelect.value;
+
+    // Filter doctors
+    const filteredDoctors = doctors.filter(d => d.department == selectedDeptId && d.branch_id == selectedBranchId);
+
+    doctorSelect.innerHTML = `<option value="" disabled selected>Select Doctor</option>`;
+    filteredDoctors.forEach(doc => {
+      const opt = document.createElement("option");
+      opt.value = doc.email;
+      opt.textContent = doc.name;
+      doctorSelect.appendChild(opt);
+    });
+
+    doctorSelect.disabled = false;
+    continueBookingBtn.disabled = true;
+  });
+
+  doctorSelect.addEventListener("change", () => {
+    if (doctorSelect.value) {
+      continueBookingBtn.disabled = false;
+    }
+  });
+
+  continueBookingBtn.addEventListener("click", () => {
+    const doctorEmail = doctorSelect.value;
+    if (doctorEmail) {
+      window.location.href = `/docProfile/${doctorEmail}`;
+    }
+  });
     
   </script>
 </body>

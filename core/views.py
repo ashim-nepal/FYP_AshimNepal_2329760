@@ -160,7 +160,9 @@ def view_patientProfile(request, patient_email):
         patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
         print(patient_val.assigned_doctors_data)
     return render(request,"viewPatientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val, 'patient_image':patient.profile_pic})
-  
+
+def showAllDoctors(request):
+    return render(request, "all_doctors.html")  
 
 def adminDB(request):
     if not request.session.get('is_authenticated'):
@@ -627,6 +629,12 @@ def get_users(request):
     users = Users.objects.filter(role__in=['Reception', 'Doctor']).values('id', 'name', 'email', 'role', 'branch_id')
     return JsonResponse(list(users), safe=False)
 
+
+def get_all_users(request):
+    all_users = Users.objects.values()
+    return JsonResponse({"all_users": list(all_users)}, status=200)
+
+
 # Get All Departments
 def get_departments(request):
     try:
@@ -770,6 +778,12 @@ def delete_doctor(request, doctor_id):
         except Exception as e:
             return JsonResponse({"error": str(e)}, status=500)
         
+
+def get_doctors(request):
+    doctors = list(Doctors.objects.values())
+    return JsonResponse({'doctors': doctors})
+
+
         
 # Adding health packages
 @csrf_exempt

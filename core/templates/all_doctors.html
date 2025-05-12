@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>All Doctors</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <div class="max-w-7xl mx-auto p-6">
+    <h2 class="text-3xl font-bold text-[#276d2f] text-center mb-6">Available Doctors</h2>
+
+    <!-- Filter Panel -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <select id="branchFilter" class="p-2 border rounded-md">
+        <option value="">All Branches</option>
+      </select>
+      <select id="deptFilter" class="p-2 border rounded-md">
+        <option value="">All Departments</option>
+      </select>
+      <input type="text" id="nameFilter" placeholder="Search by Name" class="p-2 border rounded-md" />
+      <select id="ratingFilter" class="p-2 border rounded-md">
+        <option value="">All Ratings</option>
+        <option value="0">0+</option>
+        <option value="4">4+</option>
+        <option value="6">6+</option>
+        <option value="8">8+</option>
+      </select>
+    </div>
+
+    <!-- Doctors Display -->
+    <div id="doctorCards" class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"></div>
+  </div>
+
+<script>
+  let doctors = []; // Will be fetched
+  let users = [];   // For profile pics
+  let branches = []; // For branch name
+  let departments = [];
+
+  async function loadAllData() {
+    try {
+      const [docRes, userRes, branchRes, deptRes] = await Promise.all([
+        fetch('/api/get_doctors/'),
+        fetch('/api/get_all_users/'),
+        fetch('/api/get_all_hospital_branches/'),
+        fetch('/api/get-departments/')
+      ]);
+      const docData = await docRes.json();
+      const userData = await userRes.json();
+      const branchData = await branchRes.json();
+      const deptData = await deptRes.json();
+
+      console.log(docData);
+      console.log(userData);
+      console.log(branchData);
+      console.log(deptData);
+
+      doctors = docData.doctors;
+      users = userData.all_users;
+      branches = branchData.branches;
+      departments = deptData.departments;
+
+      populateFilters();
+      filterAndRender();
+    } catch (e) {
+      console.error("Error loading data:", e);
+    }
+  }
+
+  function populateFilters() {
+    const branchSel = document.getElementById("branchFilter");
+    const deptSel = document.getElementById("deptFilter");
+
+    // Populate Branch Dropdown
+    branches.forEach(b => {
+        const opt = document.createElement("option");
+        opt.value = b.branch_code;
+        opt.textContent = b.branch_name;
+        branchSel.appendChild(opt);
+    });
+
+    // Initially populate all departments
+    updateDeptOptions('');
+  }
+
+
+  function updateDeptOptions(selectedBranchCode) {
+  const deptSel = document.getElementById("deptFilter");
+  deptSel.innerHTML = '<option value="">All Departments</option>';
+
+  const filteredDepartments = selectedBranchCode
+    ? departments.filter(d => d.branch_code === selectedBranchCode)
+    : departments;
+
+  filteredDepartments.forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d.name;
+    opt.textContent = d.name;
+    deptSel.appendChild(opt);
+  });
+}
+
+
+
+
+  function filterAndRender() {
+    const branchVal = document.getElementById("branchFilter").value;
+    const deptVal = document.getElementById("deptFilter").value.toLowerCase();
+    const nameVal = document.getElementById("nameFilter").value.toLowerCase();
+    const ratingVal = parseFloat(document.getElementById("ratingFilter").value) || 0;
+
+    const filtered = doctors.filter(doc => {
+      const matchesBranch = !branchVal || doc.branch_id === branchVal;
+      const matchesDept = !deptVal || doc.department.toLowerCase().includes(deptVal);
+      const matchesName = doc.name.toLowerCase().includes(nameVal);
+      const matchesRating = parseFloat(doc.rating) >= ratingVal;
+      return matchesBranch && matchesDept && matchesName && matchesRating;
+    });
+
+    renderCards(filtered);
+  }
+
+  function renderCards(doctorsList) {
+    const container = document.getElementById("doctorCards");
+    container.innerHTML = "";
+
+    doctorsList.forEach(doc => {
+      const user = users.find(u => u.email === doc.email);
+      const imgSrc = user?.profile_pic ? `/media/${user.profile_pic}` : "/media/profile_pics/default.jpg";
+      const branch = branches.find(b => b.branch_code === doc.branch_id)?.branch_name || "Unknown";
+
+      const card = document.createElement("div");
+      card.className = "bg-white rounded-lg shadow hover:shadow-xl transition cursor-pointer overflow-hidden";
+      card.onclick = () => window.location.href = `/docProfile/${doc.email}`;
+      card.innerHTML = `
+        <img src="${imgSrc}" alt="${doc.name}" class="h-48 w-full object-cover" />
+        <div class="p-4 space-y-1">
+          <h3 class="text-lg font-bold text-[#29622E]">${doc.name}</h3>
+          <p class="text-sm text-gray-700">${doc.department}</p>
+          <p class="text-sm text-gray-600">Branch: ${branch}</p>
+          <p class="text-sm text-yellow-600 font-semibold">⭐ ${doc.rating || '0.0'}</p>
+        </div>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  // Add event listeners
+  document.getElementById("branchFilter").addEventListener("change", (e) => {
+    const selectedBranch = e.target.value;
+    updateDeptOptions(selectedBranch);
+    filterAndRender(); // Also re-filter the cards
+    }); 
+  document.getElementById("deptFilter").addEventListener("change", filterAndRender);
+  document.getElementById("nameFilter").addEventListener("input", filterAndRender);
+  document.getElementById("ratingFilter").addEventListener("change", filterAndRender);
+
+  // Initialize
+  loadAllData();
+</script>
+</body>
+</html>
