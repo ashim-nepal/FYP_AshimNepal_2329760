@@ -15,6 +15,7 @@ urlpatterns = [
     path('viewPatientProfile/<str:patient_email>/',views.view_patientProfile, name='view_patientProfile'),
     path('aboutUs/',views.aboutUs, name="aboutUs_page"),
     path('allDoctors/',views.showAllDoctors, name="allDoctors"),
+    path('healthPackages', views.healthPackages, name="healthPackages"),
     path('adminDB/', views.adminDB, name='adminDB'),
     path('masterAdminDB/', views.masterAdmin, name='masterAdminDB'),
     path('receptionDB/', views.receptionDB, name='receptionistDB'),
@@ -94,6 +95,7 @@ urlpatterns = [
    path("api/book-health-package/", views.book_health_package),
    path("api/health-bookings/", views.get_health_bookings, name="get_health_bookings"),
     path("api/update-health-booking-status/", views.update_health_booking_status, name="update_health_booking_status"),
+    path('api/get_health_packages/', views.get_health_packages, name="all_health_packages"),
     # path("payment/success/", views.khalti_payment_success), 
     # path('api/book-health-package/', views.book_health_package, name = "book_healthPackage"),
     

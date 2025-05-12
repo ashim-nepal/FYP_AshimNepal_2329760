@@ -51,10 +51,6 @@
       const branchData = await branchRes.json();
       const deptData = await deptRes.json();
 
-      console.log(docData);
-      console.log(userData);
-      console.log(branchData);
-      console.log(deptData);
 
       doctors = docData.doctors;
       users = userData.all_users;
@@ -86,11 +82,12 @@
 
 
   function updateDeptOptions(selectedBranchCode) {
+
   const deptSel = document.getElementById("deptFilter");
   deptSel.innerHTML = '<option value="">All Departments</option>';
 
   const filteredDepartments = selectedBranchCode
-    ? departments.filter(d => d.branch_code === selectedBranchCode)
+    ? departments.filter(d => d.branch_id === selectedBranchCode)
     : departments;
 
   filteredDepartments.forEach(d => {

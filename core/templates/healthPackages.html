@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Health Packages</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-[#F5F5F5]">
+  <div class="max-w-7xl mx-auto px-4 py-10">
+    <h1 class="text-4xl font-bold text-[#29622E] mb-8">Health Checkup Packages</h1>
+
+    <!-- Filters -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <select id="branchFilter" class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold">
+        <option value="">All Branches</option>
+      </select>
+      <input type="text" id="nameSearch" placeholder="Search by package name..." class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold"/>
+      <select id="priceSort" class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold">
+        <option value="">Sort by Price</option>
+        <option value="asc">Price: Low to High</option>
+        <option value="desc">Price: High to Low</option>
+      </select>
+      <select id="nameSort" class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold">
+        <option value="">Sort by Name</option>
+        <option value="asc">A to Z</option>
+        <option value="desc">Z to A</option>
+      </select>
+    </div>
+
+    <!-- Health Packages Container -->
+    <div id="packageCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+  <script>
+    let branches = [];
+    let healthPackages = [];
+
+    async function fetchHealthPackageData() {
+      const [branchRes, packageRes] = await Promise.all([
+        fetch('/api/get_all_hospital_branches/'),
+        fetch('/api/get_health_packages/')
+      ]);
+
+      const branchData = await branchRes.json();
+      const packageData = await packageRes.json();
+
+      branches = branchData.branches;
+      healthPackages = packageData.packages;
+
+      populateHealthPackageFilters();
+      displayPackages();
+    }
+
+    function populateHealthPackageFilters() {
+      const branchSel = document.getElementById("branchFilter");
+      branches.forEach(branch => {
+        const opt = document.createElement("option");
+        opt.value = branch.branch_code;
+        opt.textContent = branch.branch_name;
+        branchSel.appendChild(opt);
+      });
+    }
+
+    function displayPackages() {
+      const container = document.getElementById("packageCards");
+      container.innerHTML = "";
+
+      let filtered = [...healthPackages];
+
+      const selectedBranch = document.getElementById("branchFilter").value;
+      const searchName = document.getElementById("nameSearch").value.toLowerCase();
+      const priceSort = document.getElementById("priceSort").value;
+      const nameSort = document.getElementById("nameSort").value;
+
+      if (selectedBranch) {
+        filtered = filtered.filter(p => p.branch_id === selectedBranch);
+      }
+
+      if (searchName) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(searchName));
+      }
+
+      if (priceSort) {
+        filtered.sort((a, b) => priceSort === 'asc' ? a.price - b.price : b.price - a.price);
+      }
+
+      if (nameSort) {
+        filtered.sort((a, b) => nameSort === 'asc'
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name));
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No packages found.</p>';
+        return;
+      }
+
+      filtered.forEach(pkg => {
+        const branch = branches.find(b => b.branch_code === pkg.branch_id)?.branch_name || "Unknown";
+
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300";
+        card.innerHTML = `
+          <img src="/media/${pkg.image || '/static/images/default_health.png'}" alt="${pkg.name}" class="w-full h-48 object-cover">
+          <div class="p-4">
+            <h3 class="text-xl font-bold text-[#29622E] mb-2">${pkg.name}</h3>
+            <p class="text-gray-600 text-sm mb-2">${branch}</p>
+            <p class="text-[#29622E] font-bold text-lg">Rs. ${parseFloat(pkg.price).toFixed(2)}</p>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    document.getElementById("branchFilter").addEventListener("change", displayPackages);
+    document.getElementById("nameSearch").addEventListener("input", displayPackages);
+    document.getElementById("priceSort").addEventListener("change", displayPackages);
+    document.getElementById("nameSort").addEventListener("change", displayPackages);
+
+    fetchHealthPackageData();
+  </script>
+</body>
+</html>

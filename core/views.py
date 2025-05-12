@@ -2259,6 +2259,12 @@ def get_detailed_patient_records(request, patient_email):
     }, encoder=DjangoJSONEncoder)
 
 
+def get_health_packages(request):
+    all_packages = HealthPackages.objects.values()
+    return JsonResponse({"packages": list(all_packages)}, status=200)
+
+def healthPackages(request):
+    return render(request, 'healthPackages.html')
 
 def get_pending_appointments(request):
     user_email = request.session.get("user_email")
