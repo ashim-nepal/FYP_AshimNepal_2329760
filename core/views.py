@@ -57,8 +57,28 @@ def home(request):
             "department": doc.department,
             "profile_pic": profile_pic,
         })
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+
     
-    return render(request, "home.html", {"banner_file":banner_file, 'hospital':hospital, 'packages':packages, 'doctors':doc_profiles})
+    print(redirect_page)
+    return render(request, "home.html", {"banner_file":banner_file, 'hospital':hospital, 'packages':packages, 'doctors':doc_profiles, 'profile_redirect':redirect_page})
 
 
 def patientProfile(request):

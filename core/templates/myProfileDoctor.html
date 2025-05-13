@@ -307,12 +307,13 @@
               method: "POST",
               headers: { "Content-Type": "application/json", "X-CSRFToken": getCSRFToken() },
               body: JSON.stringify({ schedule: scheduleData })
+              
           });
 
   
           let result = await response.json();
           document.getElementById("response-message").innerText = result.message || "Error updating schedule";
-  
+          alert(result.message || result.error);
           fetchSchedule(); // Reload after saving
       });
   
