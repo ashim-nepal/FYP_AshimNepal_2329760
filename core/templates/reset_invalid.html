@@ -1,9 +1,35 @@
 <!DOCTYPE html>
 <html>
-<head><title>Invalid Token</title></head>
+<head>
+  <title>Invalid Reset Token</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
 <body class="bg-gray-100 flex justify-center items-center h-screen">
   <div class="bg-white p-6 rounded-lg shadow text-center text-red-600 font-bold">
     Invalid or expired password reset link. Please try again.
+    <div id="message" class="text-2xl text-green-700 font-semibold">
+      Redirecting home in 10 seconds...
+    </div>
   </div>
+  <script>
+
+    function redirectHome(delay = 10) {
+      let countdown = delay;
+      const messageEl = document.getElementById("message");
+
+      const interval = setInterval(() => {
+        countdown--;
+        messageEl.textContent = `Redirecting home in ${countdown} seconds...`;
+
+        if (countdown === 0) {
+          clearInterval(interval);
+          window.location.href = "/";
+        }
+      }, 1000);
+    }
+
+    redirectHome();
+
+  </script>
 </body>
 </html>

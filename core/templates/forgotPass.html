@@ -6,16 +6,142 @@
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 p-6">
-  <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
-    <h2 class="text-xl font-bold mb-4 text-center text-green-700">Forgot Password</h2>
+   <nav class="bg-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <a href="/" class="text-xl font-bold text-[#29622E] hover:text-[#35993E]">syncHealth</a>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex space-x-6 items-center">
+          <a href="/" class="text-[#29622E] hover:text-[#35993E]">Home</a>
+          <a href="/allDepartments" class="text-[#29622E] hover:text-[#35993E]">Departments</a>
+          <a href="/allDoctors" class="text-[#29622E] hover:text-[#35993E]">Doctors</a>
+          <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
+          <a href="/aboutUs" class="text-[#29622E] hover:text-[#35993E]">About Us</a>
+        </div>
+
+        <!-- Icons -->
+        <div class="hidden md:flex space-x-4 items-center">
+          <a href="/chats/" class="text-[#29622E] hover:text-[#35993E]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h4m5 3l-3-3H6a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2z"/>
+            </svg>
+          </a>
+          <a href="{{profile_redirect}}" class="text-[#29622E] hover:text-[#35993E]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4z"/>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+         
+        <div class="md:hidden">
+          <button id="menu-toggle" class="text-[#29622E] hover:text-[#35993E]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Navigation -->
+      <div id="mobile-menu" class="hidden md:hidden space-y-2">
+        <a href="/" class="block text-[#29622E] hover:text-[#35993E]">Home</a>
+        <a href="/allDepartments" class="block text-[#29622E] hover:text-[#35993E]">Departments</a>
+        <a href="/allDoctors" class="block text-[#29622E] hover:text-[#35993E]">Doctors</a>
+        <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
+        <a href="/aboutUs" class="block text-[#29622E] hover:text-[#35993E]">About Us</a>
+        <a href="/chats" class="text-[#29622E] hover:text-[#35993E]">Chats</a>
+        <a href="{{profile_redirect}}" class="block text-[#29622E] hover:text-[#35993E]">Profile</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-md mt-5 mx-auto bg-white p-6 rounded-lg shadow-md">
+    <h1 class="text-xl font-bold mb-4 text-center text-green-700">Forgot Password</h1>
+    <p class="mt-4 text-center  text-xs block text-[#29622E]">An email will be sent to you, click on the link to reset your password!</p>
     <form id="forgot-form" class="space-y-4">
-      <div>
+      <div class="mt-5">
         <label class="block font-medium text-gray-700">Enter your Email</label>
         <input type="email" id="forgot-email" class="w-full p-3 border rounded" required />
       </div>
       <button class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded">Send Reset Link</button>
     </form>
+    <a href="javascript:history.back()" class="mt-4 text-center text-u block text-[#29622E] hover:text-[#35993E]"><- Return Back</a>
   </div>
+
+
+  <footer class="bg-[#29622E] mt-20 text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Logo Section -->
+      <div class="flex items-center">
+        <a href="/" class="text-3xl font-bold text-white hover:text-[#35993E]">syncHealth</a>
+      </div>
+  
+      <!-- Contact Section -->
+      <div class="space-y-3">
+        <h3 class="text-lg font-bold">Contact</h3>
+        <p>Email: customer@synchealth.com</p>
+        <p>Phone: +977 1234567890</p>
+        <a 
+          href="#" 
+          id="location-link" 
+          class="text-white hover:underline"
+        >
+          Our Location: Kathmandu, Nepal
+        </a>
+      </div>
+  
+      <!-- Back to Top and Pharmacy Tracker -->
+      <div class="text-right space-y-3">
+        <button 
+          id="back-to-top" 
+          class="flex items-center justify-center bg-[#35993E] text-white p-2 rounded hover:bg-white hover:text-[#29622E]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+          </svg>
+          <span class="ml-2">Back to Top</span>
+        </button>
+        <a 
+          href="#" 
+          id="track-pharmacy" 
+          class="flex block text-white hover:underline"
+        >
+          Track Nearby Pharmacies
+        </a>
+      </div>
+    </div>
+  
+    <!-- Bottom Section -->
+    <div class="border-t border-white mt-8 pt-4 text-center">
+      <p>&copy; <span id="current-year"></span> syncHealth. All rights reserved.</p>
+    </div>
+  
+    <!-- Popup Box -->
+    <div id="popup-box" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
+      <div class="bg-white p-6 rounded-lg max-w-md w-full">
+        <h3 id="popup-title" class="text-lg text-[#35993E] font-bold mb-4"></h3> <!-- Dynamic Title Here -->
+        <iframe 
+          id="map" 
+          src="" 
+          width="100%" 
+          height="200" 
+          frameborder="0" 
+          style="border:0;" 
+          allowfullscreen="" 
+          aria-hidden="false" 
+          tabindex="0"
+        ></iframe>
+        <button 
+          id="close-popup" 
+          class="mt-4 w-full bg-[#808080] text-white py-2 px-4 rounded hover:bg-[#808099]">
+          Close
+        </button>
+      </div>
+    </div>
+  </footer>
 
   <script>
     document.getElementById("forgot-form").addEventListener("submit", async function (e) {
@@ -41,6 +167,62 @@
   function confirmLogout() {
         window.location.href = "/logout/";
 }
+
+
+
+ const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
+
+    menuToggle.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+
+    document.getElementById('back-to-top').addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    
+    // Show Popup with Map for Location and Pharmacy Tracker
+    const popupBox = document.getElementById('popup-box');
+    const mapFrame = document.getElementById('map');
+    const closePopup = document.getElementById('close-popup');
+    const popupTitle = document.getElementById('popup-title'); // Access the title element
+    
+    document.getElementById('location-link').addEventListener('click', (event) => {
+        event.preventDefault();
+        popupTitle.textContent = 'Our Location'; // Set the title for location
+        mapFrame.src = 'https://www.google.com/maps/embed?pb=YOUR_EMBED_MAP_URL'; // Replace with your actual Google Maps embed link
+        popupBox.classList.remove('hidden');
+    });
+    
+    // Dynamic Nearby Pharmacy Tracker
+    document.getElementById('track-pharmacy').addEventListener('click', (event) => {
+      event.preventDefault();
+      popupTitle.textContent = 'Nearby Pharmacy Tracker';
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          // Embed Google Maps pharmacy search near user's location
+          const searchURL = `https://www.google.com/maps?q=pharmacy&ll=${lat},${lon}&z=15&output=embed`;
+          mapFrame.src = searchURL;
+          popupBox.classList.remove('hidden');
+        }, () => {
+          alert("Location permission denied or unavailable.");
+        });
+      } else {
+        alert("Your browser does not support geolocation.");
+      }
+    });
+    // Close Popup
+    closePopup.addEventListener('click', () => {
+        popupBox.classList.add('hidden');
+        mapFrame.src = ''; // Clear the iframe src when popup closes
+    });
+    
+    // Set Current Year
+    document.getElementById('current-year').textContent = new Date().getFullYear();
   </script>
 </body>
 </html>

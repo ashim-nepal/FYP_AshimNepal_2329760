@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>syncHealth | Welcome!</title>
   <script src="https://cdn.tailwindcss.com"></script>
+
+
   <style>
     /* Keep dropdown visible with smooth transitions */
     .dropdown-content {
@@ -74,7 +76,7 @@
   </style>
 </head>
 <body class="bg-gray-100">
-  <nav class="bg-white shadow-md">
+  <nav class="bg-white sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
@@ -86,7 +88,7 @@
           <a href="/allDepartments" class="text-[#29622E] hover:text-[#35993E]">Departments</a>
           <a href="/allDoctors" class="text-[#29622E] hover:text-[#35993E]">Doctors</a>
           <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
-          <a href="/aboutUs" class="text-[#29622E] hover:text-[#35993E]">About</a>
+          <a href="/aboutUs" class="text-[#29622E] hover:text-[#35993E]">About Us</a>
         </div>
 
         <!-- Icons -->
@@ -116,11 +118,11 @@
 
       <!-- Mobile Navigation -->
       <div id="mobile-menu" class="hidden md:hidden space-y-2">
-        <a href="/" class="block text-[#29622E] hover:text-[#35993E]">Home</a>
+        <a href="/" class="block text-[#29622E] hover:text-[#35993E]"><strong>Home</strong></a>
         <a href="/allDepartments" class="block text-[#29622E] hover:text-[#35993E]">Departments</a>
         <a href="/allDoctors" class="block text-[#29622E] hover:text-[#35993E]">Doctors</a>
         <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
-        <a href="/aboutUs" class="block text-[#29622E] hover:text-[#35993E]">About</a>
+        <a href="/aboutUs" class="block text-[#29622E] hover:text-[#35993E]">About Us</a>
         <a href="/chats" class="text-[#29622E] hover:text-[#35993E]">Chats</a>
         <a href="{{profile_redirect}}" class="block text-[#29622E] hover:text-[#35993E]">Profile</a>
       </div>
@@ -131,7 +133,7 @@
   <section class="relative bg-cover bg-center h-[500px] sm:h-[600px] lg:h-[700px]" style="background-image: url('/media/{{banner_file}}');">
     <div class="absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center">
       <div class="text-center text-white px-4 sm:px-6 lg:px-8">
-        <h2 class="text-4xl sm:text-5xl font-bold mb-4">Welcome to sync Health!</h2>
+        <h2 class="text-5xl sm:text-6xl font-extrabold mb-4 text-white drop-shadow-lg">Welcome to syncHealth!</h2>
         <p class="text-lg sm:text-xl mb-6">Discover the best health facilities and services we have to offer. Join with syncHealth today!</p>
       </div>
     </div>
@@ -180,7 +182,7 @@
       <!-- Section Title -->
       <div class="flex items-center justify-between mb-8">
         <h2 class="text-3xl font-bold text-[#29622E]">All Health Packages</h2>
-        <a href="#" class="text-[#35993E] font-bold hover:underline">View All</a>
+        <a href="/healthPackages" class="text-[#35993E] font-bold hover:underline">View All</a>
       </div>
   
       <!-- Health Packages Cards (Scrollable) -->
@@ -220,7 +222,7 @@
       <!-- Section Title -->
       <div class="flex items-center justify-between mb-8">
         <h2 class="text-3xl font-bold text-[#29622E]">Top Doctors</h2>
-        <a href="#" class="text-[#35993E] font-bold hover:underline">View All</a>
+        <a href="/allDoctors" class="text-[#35993E] font-bold hover:underline">View All</a>
       </div>
   
       <!-- Top Doctors Cards (Grid) -->
@@ -249,7 +251,7 @@
       <!-- Section Title -->
       <div class="flex items-center justify-between mb-8">
         <h2 class="text-3xl font-bold text-[#29622E]">Our Branches</h2>
-        <a href="#" class="text-[#35993E] font-bold hover:underline">View All</a>
+        <a href="/aboutUs/#allBranches" class="text-[#35993E] font-bold hover:underline">View All</a>
       </div>
   
       <!-- Branch Cards Section -->
@@ -290,25 +292,25 @@
       <div class="testimonial-cards-wrapper relative overflow-x-auto flex space-x-6">
         <!-- Testimonial 1 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="" alt="Person 1" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="/media/images/person1.jpg" alt="Person 1" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">John Doe</p>
           <p class="text-gray-600 mt-2">"This hospital changed my life. The doctors were amazing and the care was top-notch!"</p>
         </div>
         <!-- Testimonial 2 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="" alt="Person 2" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="/media/images/person2.png" alt="Person 2" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">Jane Smith</p>
           <p class="text-gray-600 mt-2">"I had a great experience with the team. Highly recommend for anyone seeking quality care."</p>
         </div>
         <!-- Testimonial 3 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="" alt="Person 3" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="/media/images/person3.png" alt="Person 3" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">Michael Lee</p>
           <p class="text-gray-600 mt-2">"I was impressed by the professionalism and care provided by the staff."</p>
         </div>
         <!-- Testimonial 4 -->
         <div class="testimonial-card p-6 rounded-lg border-4 border-[#29622E] bg-white mx-auto mb-4 flex-shrink-0">
-          <img src="" alt="Person 4" class="w-20 h-20 rounded-full mx-auto mb-4">
+          <img src="/media/images/person4.jpg" alt="Person 4" class="w-20 h-20 rounded-full mx-auto mb-4">
           <p class="font-bold text-lg">Emily Johnson</p>
           <p class="text-gray-600 mt-2">"I felt well cared for during my treatment. I am forever grateful for their excellent service."</p>
         </div>
