@@ -5,7 +5,7 @@
   <title>Forgot Password</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-6">
+<body class="bg-gray-100">
    <nav class="bg-white sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
@@ -18,6 +18,7 @@
           <a href="/allDepartments" class="text-[#29622E] hover:text-[#35993E]">Departments</a>
           <a href="/allDoctors" class="text-[#29622E] hover:text-[#35993E]">Doctors</a>
           <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
+          <a href="/all-test-centres" class="text-[#29622E] hover:text-[#35993E]">Test Centres</a>
           <a href="/aboutUs" class="text-[#29622E] hover:text-[#35993E]">About Us</a>
         </div>
 
@@ -52,6 +53,7 @@
         <a href="/allDepartments" class="block text-[#29622E] hover:text-[#35993E]">Departments</a>
         <a href="/allDoctors" class="block text-[#29622E] hover:text-[#35993E]">Doctors</a>
         <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
+        <a href="/all-test-centres" class="text-[#29622E] hover:text-[#35993E]">Test Centres</a>
         <a href="/aboutUs" class="block text-[#29622E] hover:text-[#35993E]">About Us</a>
         <a href="/chats" class="text-[#29622E] hover:text-[#35993E]">Chats</a>
         <a href="{{profile_redirect}}" class="block text-[#29622E] hover:text-[#35993E]">Profile</a>
@@ -170,7 +172,7 @@
 
 
 
- const menuToggle = document.getElementById('menu-toggle');
+    const menuToggle = document.getElementById('menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
 
     menuToggle.addEventListener('click', () => {

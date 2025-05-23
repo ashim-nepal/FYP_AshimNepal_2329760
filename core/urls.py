@@ -14,6 +14,7 @@ urlpatterns = [
     path('patientProfile/', views.patientProfile, name='patientProfile'),
     path('viewPatientProfile/<str:patient_email>/',views.view_patientProfile, name='view_patientProfile'),
     path('aboutUs/',views.aboutUs, name="aboutUs_page"),
+    path('all-test-centres/',views.all_test_centres, name="all_test_Centres"),
     path('allDoctors/',views.showAllDoctors, name="allDoctors"),
     path('healthPackages', views.healthPackages, name="healthPackages"),
     path('adminDB/', views.adminDB, name='adminDB'),
@@ -102,6 +103,7 @@ urlpatterns = [
     # Reset PAssword and change password
     path("myAccPage/", views.myAccPage, name="myAccPage"),
     path("forgot-password/", views.forgotPass, name="forgotPassword"),
+    path("change-password/", views.changePass, name="changePassword"),
     path("reset-password/<uidb64>/<token>/", views.resetPass, name="resetPassword"),
     path("api/update-password/", views.update_password),
     path("api/send-reset-password/", views.send_reset_password),

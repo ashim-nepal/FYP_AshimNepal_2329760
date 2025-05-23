@@ -3,19 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CT Scan Centre</title>
+    <title>{{tc_details.name}} Dashboard - syncHealth</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-6">
+<body class="bg-gray-100">
 
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6 border-b-2 pb-2 border-black">
-        <h1 class="text-2xl font-bold text-green-700">Test Centre</h1>
-        <button onclick="confirmLogout()" class="text-green-700 font-semibold">Logout</button>
+    <header class="bg-white sticky top-0 z-50 shadow-md">
+    <div class="container mx-auto flex justify-between items-center py-4 px-6">
+      <h1 class="text-2xl font-bold text-700 text-[#29622E]">{{tc_details.name}} | {{ tc_details.branch }}</h1>
+      <button onclick="confirmLogout()" class="text-700 text-[#29622E] font-semibold hover:text-500 hover:text-[#35993E] transition">Logout</button>
     </div>
+  </header>
 
     <!-- Main Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+     <h1 class="text-4xl mt-5 font-bold mb-8 text-center text-[#29622E] text-800">syncHealth Test Centre</h1>
+    <div class="grid mt-4 p-10 grid-cols-1 md:grid-cols-2 gap-6">
+        
         <div class="space-y-6">
             <!-- Pending -->
             <div id="pendingBox" class="bg-white border border-black p-4 rounded-lg">
@@ -43,14 +47,17 @@
         </div>
     </div>
 
-    <br><br>
-    <button onclick="toggleModal()" class="bg-gray-700 text-white px-4 py-2 rounded hover:bg-gray-900">View Past Logs</button>
+    <button onclick="toggleModal()" class="m-6 bg-green-700 text-white px-4 py-2 rounded hover:bg-green-900">View Past Logs</button>
+
+    <footer class="bg-gray-200 text-center py-4 mt-10">
+    <p class="text-gray-600">&copy; 2025 syncHealth. All rights reserved.</p>
+  </footer>
 
     <!-- Modal -->
-    <div id="logModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
+    <div id="logModal" class="fixed inset-0 bg-black bg-opacity-50 hidden flex items-center justify-center z-50">
         <div class="bg-white w-full max-w-3xl rounded-xl shadow-xl p-6 relative">
             <button onclick="toggleModal()" class="absolute top-3 right-3 text-xl">❌</button>
-            <h3 class="text-xl font-bold mb-4">Past Test Logs</h3>
+            <h3 class="text-xl text-green-700 font-bold mb-4">Past Test Logs</h3>
             <input type="text" placeholder="Search by email" oninput="filterRecords('pastBox')" class="mb-2 w-full p-2 border rounded" />
             <input type="date" oninput="filterRecords('pastBox')" class="mb-4 w-full p-2 border rounded" />
             <div id="pastBox-records" class="space-y-2 max-h-[400px] overflow-y-auto"></div>

@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Invalid Reset Token</title>
+  <title>Invalid Password Reset Token - syncHealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 flex justify-center items-center h-screen">
+<body class="bg-gray-100">
+  <h1 class="text-4xl mt-10 text-center font-bold text-[#29622E] mb-8">INVALID TOKEN - syncHealth</h1><br>
+  <div class="flex justify-center items-center h-screen">
   <div class="bg-white p-6 rounded-lg shadow text-center text-red-600 font-bold">
     Invalid or expired password reset link. Please try again.
     <div id="message" class="text-2xl text-green-700 font-semibold">
       Redirecting home in 10 seconds...
     </div>
   </div>
+</div>
   <script>
 
     function redirectHome(delay = 10) {

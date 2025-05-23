@@ -138,7 +138,9 @@ def doctorProfilePage(request):
         except Patients.DoesNotExist:
             doctor_val = None
         
-    return render(request,"myProfileDoctor.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'doctor': doctor_val})
+    profile_pic = get_object_or_404(Users, email=user_email).profile_pic
+    
+    return render(request,"myProfileDoctor.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'doctor': doctor_val, 'profilePic': profile_pic})
     
 def testCentreDB(request):
     
@@ -152,7 +154,9 @@ def testCentreDB(request):
     user_email = request.session.get('user_email')
     print(user_email)
     
-    return render(request, 'testCentreDB.html', {'testcnt_email':user_email})  
+    tc_details = TestCentre.objects.get(email=user_email)
+    
+    return render(request, 'testCentreDB.html', {'testcnt_email':user_email, 'tc_details':tc_details})  
 
 def view_patientProfile(request, patient_email):
     if not request.session.get('is_authenticated'):
@@ -202,7 +206,16 @@ def adminDB(request):
         hospital_name = branch.branch_name  # Fetch the hospital name
         hospital_branch = branch.branch_code
     
-    return render(request, 'adminDB.html', {'branch_name': hospital_name, 'branch_code': hospital_branch})
+    
+    
+    count_datas ={
+        'doctors': Doctors.objects.filter(branch=hospital_branch).count(),
+        'departments': Departments.objects.filter(branch=hospital_branch).count(),
+        'patients': Patients.objects.filter(branch=hospital_branch).count(),
+        'appointments': Appointments.objects.filter(branch=hospital_branch).count()
+    }
+    
+    return render(request, 'adminDB.html', {'branch_name': hospital_name, 'branch_code': hospital_branch, 'records':count_datas})
 
 def receptionDB(request):
     if not request.session.get('is_authenticated'):
@@ -231,7 +244,21 @@ def masterAdmin(request):
     if request.session.get('user_role') != 'masteradmin':
         return redirect('/login/')  # Prevent unauthorized access
     
-    return render(request, 'masterAdmin.html')
+    count_records = {
+        'hospitals': HospitalBranches.objects.count(),
+        'admins': Users.objects.filter(role='Admin').count(),
+        'receptionists': Users.objects.filter(role='Reception').count(),
+        'patients': Patients.objects.count(),
+        'doctors': Doctors.objects.count(),
+        'departments': Departments.objects.count(),
+        'testCentres': TestCentre.objects.count(),
+        'healthPackages': HealthPackages.objects.count(),
+        'appointments': Appointments.objects.count(),
+        'prescriptions': Prescriptions.objects.count()
+        
+    }
+    
+    return render(request, 'masterAdmin.html', {'count_records': count_records})
 
 
 def loginPage(request):
@@ -961,11 +988,14 @@ def create_test_centre(request):
 # Get All Test Centres
 def get_test_centres(request):
     try:
-        test_centres = TestCentre.objects.all().values('id', 'name', 'description', 'price', 'branch_id')
+        test_centres = TestCentre.objects.all().values('id', 'name', 'email','description', 'testcentre_pic','price', 'branch_id')
         return JsonResponse({"test_centres": list(test_centres)}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
 
+def all_test_centres(request):
+    tc_list = Users.objects.filter(role="TestCentre").values("id", "name", "email", "branch_id", "profile_pic", "is_active")
+    return render(request, 'allTestCentres.html', {'tc_list':tc_list})
 
 
 # Edit Test Centre
@@ -1319,7 +1349,8 @@ def doc_profile(request, doctor_email):
         
     doctor = get_object_or_404(Doctors, email=doctor_email)
     hospital_name = get_object_or_404(HospitalBranches, branch_code=doctor.branch_id)
-    return render(request, 'docProfile.html',{'doc': doctor, 'hospital': hospital_name, "logged_in": logged_in, "msg":msg, 'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val})
+    doc_profilePic = get_object_or_404(Users, email=doctor_email).profile_pic
+    return render(request, 'docProfile.html',{'doc': doctor, 'hospital': hospital_name, "logged_in": logged_in, "msg":msg, 'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val, 'profilePic':doc_profilePic})
 
 
 
@@ -2076,6 +2107,13 @@ def forgotPass(request):
     user_email = request.session.get('user_email')
     print(user_email)
     return render(request,"forgotPass.html", {'user_email': user_email})
+
+@csrf_exempt
+def changePass(request):
+    
+    user_email = request.session.get('user_email')
+    print(user_email)
+    return render(request,"passwordReset.html", {'user_email': user_email})
     
     
 @csrf_exempt

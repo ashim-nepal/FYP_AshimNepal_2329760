@@ -3,10 +3,66 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
+  <title>Login - syncHealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 h-screen flex items-center justify-center font-sans">
+<body class="bg-gray-100">
+  <nav class="bg-white sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex justify-between items-center h-16">
+        <!-- Logo -->
+        <a href="/" class="text-xl font-bold text-[#29622E] hover:text-[#35993E]">syncHealth</a>
+
+        <!-- Desktop Navigation -->
+        <div class="hidden md:flex space-x-6 items-center">
+          <a href="/" class="text-[#29622E] hover:text-[#35993E]">Home</a>
+          <a href="/allDepartments" class="text-[#29622E] hover:text-[#35993E]">Departments</a>
+          <a href="/allDoctors" class="text-[#29622E] hover:text-[#35993E]">Doctors</a>
+          <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
+          <a href="/all-test-centres" class="text-[#29622E] hover:text-[#35993E]">Test Centres</a>
+          <a href="/aboutUs" class="text-[#29622E] hover:text-[#35993E]">About</a>
+        </div>
+
+        <!-- Icons -->
+        <div class="hidden md:flex space-x-4 items-center">
+          <a href="/chats/" class="text-[#29622E] hover:text-[#35993E]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h8M8 14h4m5 3l-3-3H6a2 2 0 01-2-2V7a2 2 0 012-2h12a2 2 0 012 2v8a2 2 0 01-2 2z"/>
+            </svg>
+          </a>
+          <a href="{{profile_redirect}}" class="text-[#29622E] hover:text-[#35993E]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 12c2.7 0 5-2.3 5-5s-2.3-5-5-5-5 2.3-5 5 2.3 5 5 5zm0 2c-4 0-8 2-8 4v2h16v-2c0-2-4-4-8-4z"/>
+            </svg>
+          </a>
+        </div>
+
+        <!-- Mobile Menu Button -->
+         
+        <div class="md:hidden">
+          <button id="menu-toggle" class="text-[#29622E] hover:text-[#35993E]">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Navigation -->
+      <div id="mobile-menu" class="hidden md:hidden space-y-2">
+        <a href="/" class="block text-[#29622E] hover:text-[#35993E]">Home</a>
+        <a href="/allDepartments" class="block text-[#29622E] hover:text-[#35993E]">Departments</a>
+        <a href="/allDoctors" class="block text-[#29622E] hover:text-[#35993E]">Doctors</a>
+        <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a><br>
+        <a href="/all-test-centres" class="text-[#29622E] hover:text-[#35993E]">Test Centres</a>
+        <a href="/aboutUs" class="block text-[#29622E] hover:text-[#35993E]">About</a>
+        <a href="/chats" class="text-[#29622E] hover:text-[#35993E]">Chats</a>
+        <a href="{{profile_redirect}}" class="block text-[#29622E] hover:text-[#35993E]">Profile</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="h-screen flex items-center justify-center font-sans">
 
   <!-- Login Container -->
   <div class="bg-white shadow-lg rounded-lg w-full max-w-md p-8">
@@ -56,6 +112,77 @@
       <p class="text-sm mt-6 text-center text-green-600 underline cursor-pointer" onclick="window.location.href='/forgot-password/'">Forgot Password?</p>
     </div>
   </div>
+</div>
+
+  <footer class="bg-[#29622E] text-white py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
+      <!-- Logo Section -->
+      <div class="flex items-center">
+        <a href="/" class="text-3xl font-bold text-white hover:text-[#35993E]">syncHealth</a>
+      </div>
+  
+      <!-- Contact Section -->
+      <div class="space-y-3">
+        <h3 class="text-lg font-bold">Contact</h3>
+        <p>Email: customer@synchealth.com</p>
+        <p>Phone: +977 1234567890</p>
+        <a 
+          href="#" 
+          id="location-link" 
+          class="text-white hover:underline"
+        >
+          Our Location: Kathmandu, Nepal
+        </a>
+      </div>
+  
+      <!-- Back to Top and Pharmacy Tracker -->
+      <div class="text-right space-y-3">
+        <button 
+          id="back-to-top" 
+          class="flex items-center justify-center bg-[#35993E] text-white p-2 rounded hover:bg-white hover:text-[#29622E]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"/>
+          </svg>
+          <span class="ml-2">Back to Top</span>
+        </button>
+        <a 
+          href="#" 
+          id="track-pharmacy" 
+          class="flex block text-white hover:underline"
+        >
+          Track Nearby Pharmacies
+        </a>
+      </div>
+    </div>
+  
+    <!-- Bottom Section -->
+    <div class="border-t border-white mt-8 pt-4 text-center">
+      <p>&copy; <span id="current-year"></span> syncHealth. All rights reserved.</p>
+    </div>
+  
+    <!-- Popup Box -->
+    <div id="popup-box" class="hidden fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center">
+      <div class="bg-white p-6 rounded-lg max-w-md w-full">
+        <h3 id="popup-title" class="text-lg text-[#35993E] font-bold mb-4"></h3> <!-- Dynamic Title Here -->
+        <iframe 
+          id="map" 
+          src="" 
+          width="100%" 
+          height="200" 
+          frameborder="0" 
+          style="border:0;" 
+          allowfullscreen="" 
+          aria-hidden="false" 
+          tabindex="0"
+        ></iframe>
+        <button 
+          id="close-popup" 
+          class="mt-4 w-full bg-[#808080] text-white py-2 px-4 rounded hover:bg-[#808099]">
+          Close
+        </button>
+      </div>
+    </div>
+  </footer>
 
   <!-- JavaScript -->
   <script>
@@ -123,78 +250,59 @@
 
 
 
-    // Form Submit Event
-    {% comment %} loginForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+  const menuToggle = document.getElementById('menu-toggle');
+    const mobileMenu = document.getElementById('mobile-menu');
 
-      function getCSRFToken() {
-        const name = 'csrftoken';
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i].trim();
-          if (cookie.startsWith(name + '=')) {
-            return cookie.substring(name.length + 1);
-          }
-        }
-        return null;
-      }
-      
-      
-  
-      // Reset error messages
-      emailError.classList.add('hidden');
-      passwordError.classList.add('hidden');
-  
-      let isValid = true;
-  
-      // Validate email
-      if (!emailRegex.test(emailInput.value.trim())) {
-        emailError.classList.remove('hidden');
-        isValid = false;
-      }
-  
-      // Validate password
-      if (passwordInput.value.trim().length < 8) {
-        passwordError.classList.remove('hidden');
-        isValid = false;
-      }
-  
-      if (isValid) {
-        try {
-            const csrfToken = getCSRFToken();
-            console.log("CSRF TOKEN: ", csrfToken);
-            const loginData = {
-                email: emailInput.value.trim(),
-                password: passwordInput.value.trim(),
-            };
+    menuToggle.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
 
-            console.log("Sending Login Data:", loginData);
+    document.getElementById('back-to-top').addEventListener('click', () => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+    
+    // Show Popup with Map for Location and Pharmacy Tracker
+    const popupBox = document.getElementById('popup-box');
+    const mapFrame = document.getElementById('map');
+    const closePopup = document.getElementById('close-popup');
+    const popupTitle = document.getElementById('popup-title'); // Access the title element
+    
+    document.getElementById('location-link').addEventListener('click', (event) => {
+        event.preventDefault();
+        popupTitle.textContent = 'Our Location'; // Set the title for location
+        mapFrame.src = 'https://www.google.com/maps/embed?pb=YOUR_EMBED_MAP_URL'; // Replace with your actual Google Maps embed link
+        popupBox.classList.remove('hidden');
+    });
+    
+    // Dynamic Nearby Pharmacy Tracker
+    document.getElementById('track-pharmacy').addEventListener('click', (event) => {
+      event.preventDefault();
+      popupTitle.textContent = 'Nearby Pharmacy Tracker';
 
-            const response = await fetch('/api/login/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': csrfToken,
-                },
-                body: JSON.stringify(loginData),
-            });
-  
-          const data = await response.json();
-  
-          if (response.ok) {
-            // Successful login: Redirect based on backend response
-            alert('Login successful!');
-            window.location.href = data.redirect_url;
-          } else {
-            // Show error message from backend
-            alert(data.error || 'Login failed. Please try again.');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          alert('An unexpected error occurred. Please try again later.');
-        }
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const lat = position.coords.latitude;
+          const lon = position.coords.longitude;
+
+          // Embed Google Maps pharmacy search near user's location
+          const searchURL = `https://www.google.com/maps?q=pharmacy&ll=${lat},${lon}&z=15&output=embed`;
+          mapFrame.src = searchURL;
+          popupBox.classList.remove('hidden');
+        }, () => {
+          alert("Location permission denied or unavailable.");
+        });
+      } else {
+        alert("Your browser does not support geolocation.");
       }
-    }); {% endcomment %}
+    });
+    // Close Popup
+    closePopup.addEventListener('click', () => {
+        popupBox.classList.add('hidden');
+        mapFrame.src = ''; // Clear the iframe src when popup closes
+    });
+    
+    // Set Current Year
+    document.getElementById('current-year').textContent = new Date().getFullYear();
   </script>
 
 </body>

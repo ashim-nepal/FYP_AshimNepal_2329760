@@ -9,12 +9,12 @@
 <body class="bg-gray-100 font-sans">
   <div class="container mx-auto p-6">
     <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+    <div class="flex justify-between items-center mb-6 sticky top-0 z-50 shadow-md">
       <div class="flex items-center space-x-4">
         <div class="bg-green-700 w-10 h-10 flex items-center justify-center rounded-full">
-          <span class="text-white font-bold text-lg">M</span>
+          <span class="text-white font-bold text-lg">sH</span>
         </div>
-        <h1 class="text-3xl font-bold text-green-700">Master Administrator</h1>
+        <h1 class="text-3xl font-bold text-green-700">Super Administrator - syncHealth Digital</h1>
       </div>
       <button onclick="confirmLogout()" class="text-green-700 font-semibold hover:underline">Logout</button>
     </div>
@@ -23,43 +23,43 @@
     <div class="grid grid-cols-5 gap-6 mb-10">
       <div class="bg-green-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Total Hospitals</p>
-        <p class="text-2xl font-bold mt-2">10</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.hospitals}}</p>
       </div>
       <div class="bg-blue-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Total Admins</p>
-        <p class="text-2xl font-bold mt-2">15</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.admins}}</p>
       </div>
       <div class="bg-purple-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Total Receptions</p>
-        <p class="text-2xl font-bold mt-2">30</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.receptionists}}</p>
       </div>
       <div class="bg-teal-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Total Patients</p>
-        <p class="text-2xl font-bold mt-2">500</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.patients}}</p>
       </div>
       <div class="bg-orange-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Total Doctors</p>
-        <p class="text-2xl font-bold mt-2">50</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.doctors}}</p>
       </div>
       <div class="bg-indigo-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Departments</p>
-        <p class="text-2xl font-bold mt-2">8</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.departments}}</p>
       </div>
       <div class="bg-pink-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Test Centres</p>
-        <p class="text-2xl font-bold mt-2">5</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.testCentres}}</p>
       </div>
       <div class="bg-gray-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Health Packages</p>
-        <p class="text-2xl font-bold mt-2">12</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.healthPackages}}</p>
       </div>
       <div class="bg-yellow-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Total Appointments</p>
-        <p class="text-2xl font-bold mt-2">250</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.appointments}}</p>
       </div>
       <div class="bg-red-600 text-white text-center py-6 rounded-lg shadow-md">
         <p class="text-lg font-bold">Total Prescriptions</p>
-        <p class="text-2xl font-bold mt-2">300</p>
+        <p class="text-2xl font-bold mt-2">{{count_records.prescriptions}}</p>
       </div>
     </div>
 
@@ -123,7 +123,7 @@
 
   <!-- Footer -->
   <footer class="bg-gray-200 text-center py-4 mt-10">
-    <p class="text-gray-600">&copy; syncHealth, 2025</p>
+    <p class="text-gray-600">&copy; 2025 syncHealth. All rights reserved.</p>
   </footer>
 
   <!-- Modal -->

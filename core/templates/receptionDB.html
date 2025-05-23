@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reception Dashboard</title>
+  <title>Receptionist Dashboard - syncHealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
 
   <!-- Header -->
-  <header class="bg-white shadow-sm">
+  <header class="bg-white sticky top-0 z-50 shadow-md">
     <div class="container mx-auto flex justify-between items-center py-4 px-6">
       <h1 class="text-2xl font-bold text-700 text-[#29622E]">SyncHealth | {{ branch_name }}</h1>
       <button onclick="confirmLogout()" class="text-700 text-[#29622E] font-semibold hover:text-500 hover:text-[#35993E] transition">Logout</button>
@@ -18,7 +18,7 @@
 
   <!-- Main Content -->
   <main class="container mx-auto py-6 px-6">
-    <h2 class="text-3xl font-semibold text-gray-800 mb-6 text-center">Reception Dashboard</h2>
+    <h1 class="text-4xl font-bold mb-8 text-center text-[#29622E] text-800">syncHealth Receptionist</h1>
 
     <!-- Add New Patient Section -->
     <div class="bg-white shadow rounded-lg p-6 mb-6">
@@ -83,9 +83,10 @@
     <button onclick="document.getElementById('booking-modal').classList.remove('hidden')" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
       View Health Bookings
     </button>
+    <br>
 
     <!-- All Patients Section -->
-    <div class="bg-white shadow rounded-lg p-6">
+    <div class="bg-white mt-5 shadow rounded-lg p-6">
       <h3 class="text-xl font-bold text-gray-700 mb-4">All Patients</h3>
       <div class="overflow-x-auto">
         <input type="text" id="search-email" placeholder="Search by Email" class="w-full p-2 border border-gray-300 rounded mb-2">
@@ -159,9 +160,11 @@
         <tr class="text-[#29622E]">
           <th class="border px-2 py-1">Receipt ID</th>
           <th class="border px-2 py-1">Patient</th>
+          <th class="border px-2 py-1">Package</th>
+          <th class="border px-2 py-1">Branch</th>
           <th class="border px-2 py-1">Date</th>
           <th class="border px-2 py-1">Status</th>
-          <th class="border px-2 py-1">Actions</th>
+          <th class="border px-2 py-1">Amount</th>
         </tr>
       </thead>
       <tbody id="booking-table-body"></tbody>
@@ -172,8 +175,8 @@
 </div>
 
   <!-- Footer -->
-  <footer class="bg-gray-50 border-t border-gray-200 text-center py-4 text-sm text-gray-500">
-    &copy; 2025 SyncHealth. All rights reserved.
+  <footer class="bg-gray-200 text-center py-4 mt-10">
+    <p class="text-gray-600">&copy; 2025 syncHealth. All rights reserved.</p>
   </footer>
 
   <!-- JavaScript -->

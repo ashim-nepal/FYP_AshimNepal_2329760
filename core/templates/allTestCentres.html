@@ -1,15 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{tst_cnt.name}} Booking - syncHealth</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script defer src="script.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>All Test Centres</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100">
-
-    <nav class="bg-white sticky top-0 z-50 shadow-md">
+<body class="bg-[#F5F5F5]">
+  <nav class="bg-white sticky top-0 z-50 shadow-md">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-16">
         <!-- Logo -->
@@ -22,7 +21,7 @@
           <a href="/allDoctors" class="text-[#29622E] hover:text-[#35993E]">Doctors</a>
           <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a>
           <a href="/all-test-centres" class="text-[#29622E] hover:text-[#35993E]"><strong>Test Centres</strong></a>
-          <a href="/aboutUs" class="text-[#29622E] hover:text-[#35993E]">About Us</a>
+          <a href="/aboutUs" class="text-[#29622E] hover:text-[#35993E]">About</a>
         </div>
 
         <!-- Icons -->
@@ -55,37 +54,42 @@
         <a href="/" class="block text-[#29622E] hover:text-[#35993E]">Home</a>
         <a href="/allDepartments" class="block text-[#29622E] hover:text-[#35993E]">Departments</a>
         <a href="/allDoctors" class="block text-[#29622E] hover:text-[#35993E]">Doctors</a>
-        <a href="/healthPackages" class="text-[#29622E] hover:text-[#35993E]">Packages</a><br>
+        <a href="/healthPackages" class="block text-[#29622E] hover:text-[#35993E]">Packages</a>
         <a href="/all-test-centres" class="text-[#29622E] hover:text-[#35993E]"><strong>Test Centres</strong></a>
-        <a href="/aboutUs" class="block text-[#29622E] hover:text-[#35993E]">About Us</a>
+        <a href="/aboutUs" class="block text-[#29622E] hover:text-[#35993E]">About</a>
         <a href="/chats" class="text-[#29622E] hover:text-[#35993E]">Chats</a>
         <a href="{{profile_redirect}}" class="block text-[#29622E] hover:text-[#35993E]">Profile</a>
       </div>
     </div>
   </nav>
 
-    <div class="max-w-4xl mt-10 mx-auto bg-white shadow-lg rounded-lg p-6">
-        <!-- Test Centre Details -->
-        <div id="testCentreDetails">
-            <img id="centrePic" class="w-59 h-30 rounded" src="/media/{{tst_profile}}" alt="Test Centre">
-            <h2 id="centreName" class="text-2xl font-bold text-gray-800 mt-2">{{tst_cnt.name}}</h2>
-            <p id="centreDescription" class="text-gray-600 mt-2">{{tst_cnt.description}}</p>
-            <p class="text-gray-800"><strong>Branch:</strong> {{tst_cnt.branch}}</p>
-            <p class="text-gray-800-u"><strong>Email:</strong> <a href="#">{{tst_cnt.email}}</a></p>
-        </div>
-
-        <!-- Booking Dates -->
-        <div id="dateButtons" class="mt-4 flex flex-wrap gap-2"></div>
-
-        <!-- Book Appointment Button -->
-        <button id="bookTestBtn" class="w-50 bg-green-700 hover:bg-green-600 text-white p-2 mt-4 rounded disabled:opacity-50" disabled>
-            Book Appointment
-        </button>
-
+  <div class="max-w-7xl mx-auto px-4 py-10">
+    <h1 class="text-4xl text-center font-bold text-[#29622E] mb-8">All Test Centres</h1>
+    <label for="branchFilter" class="block mb-1 text-sm font-medium text-700 text-[#35993E]">Apply Filters</label>
+    <!-- Filters -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <select id="branchFilter" class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold">
+        <option value="">All Branches</option>
+      </select>
+      <input type="text" id="nameSearch" placeholder="Search by package name..." class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold"/>
+      <select id="priceSort" class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold">
+        <option value="">Sort by Price</option>
+        <option value="asc">Price: Low to High</option>
+        <option value="desc">Price: High to Low</option>
+      </select>
+      <select id="nameSort" class="py-2 px-4 rounded-lg border text-[#29622E] font-semibold">
+        <option value="">Sort by Name</option>
+        <option value="asc">A to Z</option>
+        <option value="desc">Z to A</option>
+      </select>
     </div>
-    <br><br><br><br>
 
-    <footer class="bg-[#29622E] text-white py-8">
+    <!-- Health Packages Container -->
+    <div id="packageCards" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+  </div>
+
+
+  <footer class="bg-[#29622E] text-white py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-3 gap-8">
       <!-- Logo Section -->
       <div class="flex items-center">
@@ -155,87 +159,100 @@
     </div>
   </footer>
 
+  <script>
+    let branches = [];
+    let healthPackages = [];
 
+    async function fetchHealthPackageData() {
+      const [branchRes, packageRes] = await Promise.all([
+        fetch('/api/get_all_hospital_branches/'),
+        fetch('/api/get-test-centres/')
+      ]);
 
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const testCentreId = "{{tst_cnt.email}}"; // Dynamically set this ID
-            const patientNo = "{{user_email}}"; // Replace dynamically
-            const userRole = "{{user_role}}";
-            const bookTestBtn = document.getElementById("bookTestBtn");
-            const dateButtons = document.getElementById("dateButtons");
+      const branchData = await branchRes.json();
+      const packageData = await packageRes.json();
+      console.log(packageData);
+      branches = branchData.branches;
+      healthPackages = packageData.test_centres;
+      
 
-            let selectedDate = null;
-    
-        
-            // Generate Date Buttons (Next 7 Days)
-    for (let i = 0; i < 7; i++) {
-        let date = new Date();
-        date.setDate(date.getDate() + i);
-        let dateString = date.toISOString().split("T")[0];
-
-        let options = { weekday: 'short', month: 'short', day: 'numeric' };
-        let displayDate = date.toLocaleDateString("en-US", options);
-
-        let btn = document.createElement("button");
-        btn.classList.add("bg-gray-200", "text-gray-700", "px-4", "py-2", "rounded", "transition");
-        btn.textContent = displayDate;
-        btn.dataset.date = dateString;
-
-        btn.onclick = () => {
-            selectedDate = dateString;
-
-            // Reset styles for all buttons
-            document.querySelectorAll("#dateButtons button").forEach(b => {
-                b.classList.remove("bg-green-800", "text-white");
-                b.classList.add("bg-gray-200", "text-gray-700");
-            });
-
-            // Highlight selected button
-            btn.classList.add("bg-green-800", "text-white");
-            btn.classList.remove("bg-gray-200", "text-gray-700");
-
-            // Enable book button
-            bookTestBtn.disabled = false;
-            bookTestBtn.dataset.date = dateString;
-        };
-
-        dateButtons.appendChild(btn);
+      populateHealthPackageFilters();
+      displayPackages();
     }
-        
-            // Book Appointment
-            bookTestBtn.addEventListener("click", function () {
-                if (!selectedDate){
-                    alert("Please select a date before booking.");
-                    return;
-                }
 
-                if (userRole !== "patient") {
-                    alert("You must be logged in as a patient to book an appointment.");
-                    return;
-                }
+    function populateHealthPackageFilters() {
+      const branchSel = document.getElementById("branchFilter");
+      branches.forEach(branch => {
+        const opt = document.createElement("option");
+        opt.value = branch.branch_code;
+        opt.textContent = branch.branch_name;
+        branchSel.appendChild(opt);
+      });
+    }
 
-                let confirmBooking = confirm(`Confirm your appointment date on ${selectedDate}?`);
-                if (!confirmBooking) return;
+    function displayPackages() {
+      const container = document.getElementById("packageCards");
+      container.innerHTML = "";
 
-                fetch("/api/book-test-appointment/", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        patient: patientNo,
-                        test_centre: testCentreId,
-                        booking_date: selectedDate,
-                    })
-                }).then(response => response.json())
-                  .then(data => alert(data.message || data.error));
-            });
-        });
-        
+      let filtered = [...healthPackages];
+
+      const selectedBranch = document.getElementById("branchFilter").value;
+      const searchName = document.getElementById("nameSearch").value.toLowerCase();
+      const priceSort = document.getElementById("priceSort").value;
+      const nameSort = document.getElementById("nameSort").value;
+
+      if (selectedBranch) {
+        filtered = filtered.filter(p => p.branch_id === selectedBranch);
+      }
+
+      if (searchName) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(searchName));
+      }
+
+      if (priceSort) {
+        filtered.sort((a, b) => priceSort === 'asc' ? a.price - b.price : b.price - a.price);
+      }
+
+      if (nameSort) {
+        filtered.sort((a, b) => nameSort === 'asc'
+          ? a.name.localeCompare(b.name)
+          : b.name.localeCompare(a.name));
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<p class="text-gray-500">No packages found.</p>';
+        return;
+      }
+
+      filtered.forEach(pkg => {
+        const branch = branches.find(b => b.branch_code === pkg.branch_id)?.branch_name || "Unknown";
+
+        const card = document.createElement("div");
+        card.className = "bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition duration-300";
+        card.innerHTML = `
+          <img src="/media/${pkg.testcentre_pic || '/static/images/default_health.png'}" alt="${pkg.name}" class="w-full h-48 object-cover">
+          <div class="p-4">
+            <h3 class="text-xl font-bold text-[#29622E] mb-2">${pkg.name}</h3>
+            <p class="text-gray-600 text-sm mb-2">${branch}</p>
+            <p class="text-[#29622E] font-bold text-lg">Rs. ${parseFloat(pkg.price).toFixed(2)}</p><br>
+            <a href="/test-centres/${pkg.email}" class="mt-6 w-150 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700">Book Now</a>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    document.getElementById("branchFilter").addEventListener("change", displayPackages);
+    document.getElementById("nameSearch").addEventListener("input", displayPackages);
+    document.getElementById("priceSort").addEventListener("change", displayPackages);
+    document.getElementById("nameSort").addEventListener("change", displayPackages);
+
+    fetchHealthPackageData();
 
 
 
 
-        const menuToggle = document.getElementById('menu-toggle');
+    const menuToggle = document.getElementById('menu-toggle');
     const mobileMenu = document.getElementById('mobile-menu');
 
     menuToggle.addEventListener('click', () => {
@@ -288,8 +305,6 @@
     
     // Set Current Year
     document.getElementById('current-year').textContent = new Date().getFullYear();
-
-    </script>
-
+  </script>
 </body>
 </html>
