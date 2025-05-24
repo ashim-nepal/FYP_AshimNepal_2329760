@@ -4,13 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard | syncHealth</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/media/images/favicon-32x32.png">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100 font-sans">
   <!-- Container -->
-  <div class="container mx-auto p-6">
-    <!-- Header -->
-    <div class="flex justify-between items-center mb-6">
+
+  <!-- Header -->
+    <div class="flex p-4 justify-between items-center mb-6 shadow-md">
       <div class="flex items-center space-x-4">
         <!-- Static Logo -->
         <div>
@@ -22,6 +23,9 @@
       </div>
       <button onclick="confirmLogout()" class="text-green-700 font-semibold hover:underline">Logout</button>
     </div>
+
+  <div class="container mx-auto p-6">
+    
 
     <!-- Stats Section -->
     <div class="grid grid-cols-4 gap-6 mb-10">
@@ -38,8 +42,8 @@
         <p class="text-2xl font-bold mt-2">{{records.patients}}</p>
       </div>
       <div class="bg-purple-600 text-white text-center py-6 rounded-lg shadow-md">
-        <p class="text-lg font-bold">Total Appointments</p>
-        <p class="text-2xl font-bold mt-2">{{records.appointments}}</p>
+        <p class="text-lg font-bold">Total Packages Revenue</p>
+        <p class="text-2xl font-bold mt-2">Rs. {{records.revenue}}</p>
       </div>
     </div>
 
@@ -66,7 +70,7 @@
           data-task="Add Health Test Centre">Add Health Test Centre</button>
         <button id="Manage Health Test Centre" class="task-button bg-orange-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-orange-700 transform hover:-translate-y-1 transition"
           data-task="Manage Health Test Centre">Manage Health Test Centre</button>
-        <button class="task-button bg-red-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-700 transform hover:-translate-y-1 transition"
+        <button class="task-button hidden bg-red-600 text-white font-bold py-4 rounded-lg shadow-md hover:bg-red-700 transform hover:-translate-y-1 transition"
           data-task="Check Workflow Data">Check Workflow Data</button>
       </div>
     </div>
@@ -114,29 +118,6 @@
 </div>
 
   <script>
-    // JavaScript for handling task buttons and modal
-    {% comment %} const taskButtons = document.querySelectorAll(".task-button");
-    const modal = document.getElementById("task-modal");
-    const modalTitle = document.getElementById("modal-title");
-    const modalBody = document.getElementById("modal-body");
-    const closeModal = document.getElementById("close-modal");
-
-    // Show modal with task-specific content
-    taskButtons.forEach(button => {
-      button.addEventListener("click", () => {
-        const taskName = button.dataset.task;
-        modalTitle.innerText = taskName;
-        modalBody.innerText = `Perform the "${taskName}" task here...`;
-        modal.classList.remove("hidden");
-        modal.classList.add("flex");
-      });
-    });
-
-    // Close the modal
-    closeModal.addEventListener("click", () => {
-      modal.classList.add("hidden");
-      modal.classList.remove("flex");
-    }); {% endcomment %}
 
 
     const modal = document.getElementById("task-modal");
@@ -158,31 +139,31 @@
 
       if (task === "Add Receptionist") {
         formFields.innerHTML = `
-          <input type="text" id="name" placeholder="Full Name" class="w-full p-2 border border-gray-300 rounded" required>
-          <input type="email" id="email" placeholder="Email" class="w-full p-2 border border-gray-300 rounded" required>
-          <input type="password" id="password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
+          <label><b>Receptionist Name:</b></label><input type="text" id="name" placeholder="Full Name*" class="w-full p-2 border border-gray-300 rounded" required>
+          <label><b>Receptionist Email: </b></label><input type="email" id="email" placeholder="Email*" class="w-full p-2 border border-gray-300 rounded" required>
+          <label><b>Receptionist Password: </b></label><input type="password" id="password" placeholder="Password*" class="w-full p-2 border border-gray-300 rounded" required>
           <input type="hidden" id="branch-id" value="{{ branch_code }}"> 
         `;
       } else if (task === "Add New Doctor") {
         formFields.innerHTML = `
-          <input type="text" id="doc-name" placeholder="Doctor Name" class="w-full p-2 border border-gray-300 rounded" required>
-          <input type="email" id="doc-email" placeholder="Doctor Email" class="w-full p-2 border border-gray-300 rounded" required>
-          <input type="password" id="doc-password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
-          <input type="number" id="doc-nmc" placeholder="NMC Registration Number" class="w-full p-2 border border-gray-300 rounded" required>
-          <input type="text" id="doc-expertise" placeholder="Expertise" class="w-full p-2 border border-gray-300 rounded" required>
-          <textarea id="doc-education" placeholder="Education" class="w-full p-2 border border-gray-300 rounded"></textarea>
-          <input type="text" id="doc-hospitals" placeholder="Hospitals Worked At" class="w-full p-2 border border-gray-300 rounded" required>
-          <input type="text" id="doc-achievements" placeholder="Achievements" class="w-full p-2 border border-gray-300 rounded">
+          <input type="text" id="doc-name" placeholder="Doctor Name*" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="email" id="doc-email" placeholder="Doctor Email*" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="password" id="doc-password" placeholder="Password*" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="number" id="doc-nmc" placeholder="NMC Registration Number*" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="text" id="doc-expertise" placeholder="Expertise*" class="w-full p-2 border border-gray-300 rounded" required>
+          <textarea id="doc-education" placeholder="Education*" class="w-full p-2 border border-gray-300 rounded"></textarea>
+          <input type="text" id="doc-hospitals" placeholder="Hospitals Worked At*" class="w-full p-2 border border-gray-300 rounded" required>
+          <input type="text" id="doc-achievements" placeholder="Achievements*" class="w-full p-2 border border-gray-300 rounded">
           <select id="doc-department" class="w-full p-2 border border-gray-300 rounded" required>
-            <option value="">Select Department</option>
+            <option value="">Select Department*</option>
           </select>
           <input type="file" id="doc-profile" accept="image/*" class="w-full p-2 border border-gray-300 rounded">
           <input type="hidden" id="branch-id" value="{{ branch_code }}">
         `;
       } else if (task === "Add New Department") {
         formFields.innerHTML = `
-          <input type="text" id="dept-name" placeholder="Department Name" class="w-full p-2 border border-gray-300 rounded" required>
-          <textarea id="dept-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded"></textarea>
+          <label><b>Department Name: </b></label><input type="text" id="dept-name" placeholder="Department Name*" class="w-full p-2 border border-gray-300 rounded" required>
+          <label><b>Department Description: </b></label><textarea id="dept-description" placeholder="Description*" class="w-full p-2 border border-gray-300 rounded"></textarea>
           <input type="file" id="dept-image" name="image" accept="image/*" class="w-full p-2 border border-gray-300 rounded">
           <input type="hidden" id="branch-id" value="{{ branch_code }}">
         `;
@@ -243,10 +224,9 @@
 
       else if(task == "Add New Health Package"){
         formFields.innerHTML=`
-        <label>Package Name:</label>
-                    <input type="text" id="health-name" class="w-full p-2 border border-gray-300 rounded" placeholder="Package Name" required>
-                    <textarea id="health-description" class="w-full p-2 border border-gray-300 rounded" placeholder="Description"></textarea>
-                    <input type="number" id="health-price" class="w-full p-2 border border-gray-300 rounded" placeholder="Price" required>
+                    <label><b>Package Name: </b></label><input type="text" id="health-name" class="w-full p-2 border border-gray-300 rounded" placeholder="Package Name" required>
+                    <label><b>Package Description: </b></label><textarea id="health-description" class="w-full p-2 border border-gray-300 rounded" placeholder="Description"></textarea>
+                    <label><b>Package Price: </b></label><input type="number" id="health-price" class="w-full p-2 border border-gray-300 rounded" placeholder="Price" required>
                     <input type="file" id="health-image" class="w-full p-2 border border-gray-300 rounded" accept="image/*" required>
         `;
       }
@@ -270,11 +250,11 @@
       }
       else if(task === "Add Health Test Centre"){
         formFields.innerHTML = `
-        <input type="text" id="test-name" placeholder="Test Centre Name" class="w-full p-2 border border-gray-300 rounded" required>
-        <textarea id="test-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded"></textarea>
-        <input type="number" id="test-price" placeholder="Price" class="w-full p-2 border border-gray-300 rounded" required>
-        <input type="email" id="test-email" placeholder="Test Centre Email" class="w-full p-2 border border-gray-300 rounded" required>
-        <input type="password" id="test-password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
+        <label><b>Test Centre Name: </b></label><input type="text" id="test-name" placeholder="Test Centre Name" class="w-full p-2 border border-gray-300 rounded" required>
+        <label><b>Test Centre Description: </b></label><textarea id="test-description" placeholder="Description" class="w-full p-2 border border-gray-300 rounded"></textarea>
+        <label><b>Test Price: </b></label><input type="number" id="test-price" placeholder="Price" class="w-full p-2 border border-gray-300 rounded" required>
+        <label><b>Test Centre Email: </b></label><input type="email" id="test-email" placeholder="Test Centre Email" class="w-full p-2 border border-gray-300 rounded" required>
+        <label><b>Test Centre Password: </b></label><input type="password" id="test-password" placeholder="Password" class="w-full p-2 border border-gray-300 rounded" required>
         <input type="file" id="testcentre-image" class="w-full p-2 border border-gray-300 rounded" accept="image/*" required>
         `;
       } else if(task === "Manage Health Test Centre"){
@@ -540,15 +520,29 @@ async function fetchTestCentres(){
           tableBody.innerHTML = "";
 
           filteredTest_centres.forEach(tc => {
-              let row = `<tr>
-                  <td>${tc.name}</td>
-                  <td>${tc.description || "Description unavailable"}</td>
-                  <td>Rs. ${tc.price}</td>
-                  <td>
-                      <button onclick="editTestCentre('${tc.id}')" class="text-blue-600 hover:underline">Edit</button>
-                      <button onclick="deleteTestCentre('${tc.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
-                  </td>
-              </tr>`;
+              let row = `
+              <tr class="hover:bg-gray-50 transition-colors duration-200">
+                <td class="px-6 py-4 whitespace-nowrap text-gray-800 font-medium">${tc.name}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-gray-600">${tc.description || "Description unavailable"}</td>
+                <td class="px-6 py-4 whitespace-nowrap text-green-700 font-semibold">${tc.price}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <div class="flex space-x-3">
+                    <button 
+                      onclick="editTestCentre('${tc.id}')" 
+                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      onclick="deleteTestCentre('${tc.id}')" 
+                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              `;
               tableBody.innerHTML += row;
           });
       } else {
@@ -581,14 +575,28 @@ async function fetchDepartments_manage() {
           tableBody.innerHTML = "";
 
           filteredDepartments.forEach(dept => {
-              let row = `<tr class="border">
-                  <td class="p-2 border">${dept.name}</td>
-                  <td class="p-2 border">${dept.description}</td>
-                  <td class="p-2 border">
-                      <button onclick="openEditDepartment('${dept.id}', '${dept.name}', '${dept.description}')" class="text-blue-600 hover:underline">Edit</button>
-                      <button onclick="deleteDepartment('${dept.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
-                  </td>
-              </tr>`;
+              let row = `
+              <tr class="hover:bg-gray-50 transition-colors duration-200 border-b">
+                <td class="px-6 py-4 text-gray-800 font-medium">${dept.name}</td>
+                <td class="px-6 py-4 text-gray-600">${dept.description || "No description available"}</td>
+                <td class="px-6 py-4">
+                  <div class="flex space-x-3">
+                    <button 
+                      onclick="openEditDepartment('${dept.id}', '${dept.name}', '${dept.description}')"
+                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition"
+                    >
+                      ✏️ Edit
+                    </button>
+                    <button 
+                      onclick="deleteDepartment('${dept.id}')"
+                      class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                    >
+                      🗑️ Delete
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              `;
               tableBody.innerHTML += row;
           });
 
@@ -716,29 +724,46 @@ async function fetchUsers() {
 
           // Populate Receptionists (View Only & Delete)
           filteredReceptionists.forEach(user => {
-              let row = `<tr class="border">
-                  <td class="p-2 border">${user.name}</td>
-                  <td class="p-2 border">${user.email}</td>
-                  <td class="p-2 border">${user.branch}</td>
-                  <td class="p-2 border">
-                      <button onclick="deleteUser('${user.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
-                  </td>
-              </tr>`;
+              let row = `
+                  <tr class="hover:bg-gray-50 transition-colors duration-200 border-b">
+                    <td class="px-6 py-3 text-gray-800 font-medium">${user.name}</td>
+                    <td class="px-6 py-3 text-gray-600">${user.email}</td>
+                    <td class="px-6 py-3 text-gray-600">${user.branch}</td>
+                    <td class="px-6 py-3">
+                      <button 
+                        onclick="deleteUser('${user.id}')"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>`;
               receptionistTable.innerHTML += row;
           });
 
           // Populate Doctors (View, Edit & Delete)
           filteredDoctors.forEach(doctor => {
-              let row = `<tr class="border doctor-row" data-nmc="${doctor.nmc_registration}">
-                  <td class="p-2 border">${doctor.name}</td>
-                  <td class="p-2 border">${doctor.email}</td>
-                  <td class="p-2 border">${doctor.department}</td>
-                  <td class="p-2 border">${doctor.nmc_registration}</td>
-                  <td class="p-2 border">
-                      <button onclick="openEditDoctor('${doctor.id}', '${doctor.achievements}', '${doctor.education}', '${doctor.expertise}', '${doctor.hospitals_worked}', '${doctor.name}', '${doctor.nmc_registration}', '${doctor.department}')" class="text-blue-600 hover:underline">Edit</button>
-                      <button onclick="deleteDoctor('${doctor.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
-                  </td>
-              </tr>`;
+              let row = `
+                  <tr class="hover:bg-gray-50 transition-colors duration-200 border-b doctor-row" data-nmc="${doctor.nmc_registration}">
+                    <td class="px-6 py-3 text-gray-800 font-medium">${doctor.name}</td>
+                    <td class="px-6 py-3 text-gray-600">${doctor.email}</td>
+                    <td class="px-6 py-3 text-gray-600">${doctor.department}</td>
+                    <td class="px-6 py-3 text-gray-600">${doctor.nmc_registration}</td>
+                    <td class="px-6 py-3 space-x-2">
+                      <button 
+                        onclick="openEditDoctor('${doctor.id}', '${doctor.achievements}', '${doctor.education}', '${doctor.expertise}', '${doctor.hospitals_worked}', '${doctor.name}', '${doctor.nmc_registration}', '${doctor.department}')"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button 
+                        onclick="deleteDoctor('${doctor.id}')"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>`;
               doctorsTable.innerHTML += row;
           });
       }
@@ -790,15 +815,29 @@ function openEditDoctor(doctorId, achievements, education, expertise, hospitals_
   console.log(doctorId);
   console.log(achievements);
   document.getElementById("form-fields").innerHTML = `
-      <span class="bold">${nmc} - ${name} | ${department}</span><br><br>
+      <div class="bg-white shadow-sm rounded-md p-4 border text-sm sm:text-base w-full max-w-md">
+          <div class="mb-2">
+            <span class="font-semibold text-gray-600">NMC Registration:</span>
+            <span class="text-gray-800 ml-2">${nmc}</span>
+          </div>
+          <div class="mb-2">
+            <span class="font-semibold text-gray-600">Doctor Name:</span>
+            <span class="text-gray-800 ml-2">${name}</span>
+          </div>
+          <div>
+            <span class="font-semibold text-gray-600">Department:</span>
+            <span class="text-gray-800 ml-2">${department}</span>
+          </div>
+        </div>
+        <br><br>
       <input type="hidden" id="edit-doctor-id" value="${doctorId}">
-      <label>Achievements</label>
+      <label><b>Achievements:</b></label>
       <input type="text" id="edit-achievements" value="${achievements}" class="w-full p-2 border border-gray-300 rounded">
-      <label>Education</label>
+      <label><b>Education:</b></label>
       <input type="text" id="edit-education" value="${education}" class="w-full p-2 border border-gray-300 rounded">
-      <label>Expertise</label>
+      <label><b>Expertise:</b></label>
       <input type="text" id="edit-expertise" value="${expertise}" class="w-full p-2 border border-gray-300 rounded">
-      <label>Hospitals Worked</label>
+      <label><b>Hospitals Worked:</b></label>
       <input type="text" id="edit-hospitals-worked" value="${hospitals_worked}" class="w-full p-2 border border-gray-300 rounded">
       <button onclick="submitEditDoctor()" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded mt-4">Save</button>
   `;
@@ -883,15 +922,26 @@ async function fetchHealthPackages() {
           tableBody.innerHTML = "";
 
           filteredPackages.forEach(pkg => {
-              let row = `<tr class="border">
-                  <td class="p-2">${pkg.name}</td>
-                  <td class="p-2">${pkg.description || "No description"}</td>
-                  <td class="p-2">Rs. ${pkg.price}</td>
-                  <td class="p-2">
-                      <button onclick="openEditHealthPackageModal('${pkg.id}', '${pkg.name}', '${pkg.description}', '${pkg.price}', '${pkg.branch_id}')" class="text-blue-600 hover:underline">Edit</button>
-                      <button onclick="deleteHealthPackage('${pkg.id}')" class="text-red-600 hover:underline ml-2">Delete</button>
-                  </td>
-              </tr>`;
+              let row = `
+                  <tr class="hover:bg-gray-50 transition-colors duration-200 border-b">
+                    <td class="px-6 py-3 text-gray-800 font-medium">${pkg.name}</td>
+                    <td class="px-6 py-3 text-gray-600">${pkg.description || "No description"}</td>
+                    <td class="px-6 py-3 text-green-700 font-semibold">${pkg.price}</td>
+                    <td class="px-6 py-3 space-x-2">
+                      <button 
+                        onclick="openEditHealthPackageModal('${pkg.id}', '${pkg.name}', '${pkg.description}', '${pkg.price}', '${pkg.branch_id}')"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-500 text-white text-sm rounded-md hover:bg-blue-600 transition"
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button 
+                        onclick="deleteHealthPackage('${pkg.id}')"
+                        class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-500 text-white text-sm rounded-md hover:bg-red-600 transition"
+                      >
+                        🗑️ Delete
+                      </button>
+                    </td>
+                  </tr>`;
               tableBody.innerHTML += row;
           });
       } else {

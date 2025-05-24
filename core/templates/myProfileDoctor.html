@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Doctor's Profile | {{doctor.name}}</title>
+  <title>Doctor's Profile | {{doctor.name}} - syncHealth</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/media/images/favicon-32x32.png">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
@@ -143,7 +144,7 @@
   <section id ="scheduling-section">
 
   <div class="max-w-4xl mx-auto bg-white p-6 rounded-lg shadow-lg">
-    <h2 class="text-2xl font-bold mb-4 text-center">Set Your Availability</h2>
+    <h2 class="text-2xl text-green-700 font-bold mb-4 text-center">Set Your Availability</h2>
     
     <div id="schedule-container" class="space-y-4">
 
@@ -288,10 +289,9 @@
 
       <!-- Auto-Sorting Search Bar -->
     <div class="mb-4 flex">
-      <label>Sort By:</label>
-      <label>Patient's Email: </label> <input type="email" id="searchEmail" placeholder="Search by Patient Email" class="w-1/3 p-2 border rounded-md mr-2">
-      <label>Date: </label> <input type="date" id="searchDate" class="w-1/4 p-2 border rounded-md mr-2">
-      <button id="clearFilters" class="bg-[#256898] bg-500 text-white px-4 py-2 rounded">Clear</button>
+      <label><b>Patient's Email: </b></label> <input type="email" id="searchEmail" placeholder="Search by Patient Email" class="w-1/3 p-2 border rounded-md mr-2">
+      <label><b>Date: </b></label> <input type="date" id="searchDate" class="w-1/4 p-2 border rounded-md mr-2">
+      <button id="clearFilters" class="bg-red-400 bg-500 text-white px-4 py-2 rounded">Clear</button>
   </div>
 
       <table class="w-full bg-gray-100 border">
@@ -311,6 +311,66 @@
 </div>
 
 <!-- Prescription Modal -->
+<!-- Prescription Modal -->
+<div id="prescriptionModal" class="fixed inset-0 flex items-center justify-center z-50 hidden bg-black bg-opacity-50">
+  <div class="bg-white w-full max-w-2xl p-6 rounded-lg shadow-lg">
+    
+    <!-- Header -->
+    <h2 class="text-2xl font-bold mb-4 text-center text-gray-800">Prescription Form</h2>
+    
+    <form id="prescriptionForm" class="space-y-4">
+      <!-- Dynamic Info -->
+      <div id="prescription-info" class="text-sm text-gray-600 mb-2"></div>
+
+      <!-- Hidden Fields -->
+      <input type="hidden" id="prescriptionId">
+      <input type="hidden" id="appointmentId">
+
+      <!-- Form Fields -->
+      <div>
+        <label for="bloodPressure-sys" class="block text-gray-700 font-medium mb-1">Blood Pressure (Systolic):</label>
+        <div class="flex items-center space-x-2">
+          <input type="number" id="bloodPressure-sys" step="0.1" class="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+          <span class="text-sm text-gray-600">mm/Hg</span>
+        </div>
+      </div>
+
+      <div>
+        <label for="bloodPressure-dias" class="block text-gray-700 font-medium mb-1">Blood Pressure (Diastolic):</label>
+        <div class="flex items-center space-x-2">
+          <input type="number" id="bloodPressure-dias" step="0.1" class="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+          <span class="text-sm text-gray-600">mm/Hg</span>
+        </div>
+      </div>
+
+      <div>
+        <label for="diabetes" class="block text-gray-700 font-medium mb-1">Diabetes Level:</label>
+        <input type="number" id="diabetes" step="0.1" class="flex-1 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required>
+        <span class="text-sm text-gray-600">mg/dL</span>
+      </div>
+
+      <div>
+        <label for="medication" class="block text-gray-700 font-medium mb-1">Medication:</label>
+        <textarea id="medication" rows="3" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
+      </div>
+
+      <div>
+        <label for="notes" class="block text-gray-700 font-medium mb-1">Notes:</label>
+        <textarea id="notes" rows="3" class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" required></textarea>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex justify-end pt-4">
+        <button type="button" id="closeModal" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-md mr-2 transition">Cancel</button>
+        <button type="submit" class="px-4 py-2 bg-green-700 hover:bg-green-800 text-white rounded-md transition">Save Prescription</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!--
+
 <div id="prescriptionModal" class="fixed inset-0 flex items-center justify-center hidden bg-gray-900 bg-opacity-50">
   <div class="bg-white w-1000 p-6 rounded-lg">
       <h2 class="text-xl font-bold mb-4 text-center">Prescription</h2>
@@ -343,6 +403,9 @@
       </form>
   </div>
 </div>
+-->
+
+
 
 
 
@@ -352,8 +415,9 @@
     <h2 class="text-lg font-bold text-[#29622E] mb-4">Enter Online Meeting Link</h2>
     <input type="text" id="meeting-link-input" class="w-full border p-2 rounded mb-4" placeholder="https://meet.example.com/...">
     <div class="flex justify-end gap-3">
-      <button onclick="sendEmergencyLink()" class="bg-green-600 text-white px-4 py-2 rounded">Send</button>
       <button onclick="closeEmergencyModal()" class="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
+      <button onclick="sendEmergencyLink()" class="bg-green-600 text-white px-4 py-2 rounded">Send</button>
+      
     </div>
   </div>
 </div>
@@ -486,16 +550,40 @@
 
 
               let row = `
-                  <tr class="border-b">
-                      <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/"> ${appointment.patient_email}</a></td>
-                      <td class="px-4 py-2">${appointment.appointment_date}</td>
-                      <td class="px-4 py-2">${appointment.appointment_time}</td>
-                      <td class="px-4 py-2">${appointment.is_emergency ? "🚨 Emergency" : "Regular"}</td>
-                      <td class="px-4 py-2">
-                          <button onclick="approveAppointment('${appointment.id}')" class="bg-green-600 text-white px-3 py-1 rounded">Accept</button>
-                          <button onclick="openRejectionModal('${appointment.id}')" class="bg-red-600 text-white px-3 py-1 rounded ml-2">Reject</button>
+                  <tr class="border-b hover:bg-gray-50 transition">
+                      <td class="px-4 py-3 text-blue-700 font-medium underline">
+                        <a href="/viewPatientProfile/${appointment.patient_email}/" target="_blank">
+                          ${appointment.patient_email}
+                        </a>
                       </td>
-                  </tr>`;
+
+                      <td class="px-4 py-3 text-gray-700 font-semibold text-sm whitespace-nowrap">
+                        📅 ${appointment.appointment_date}
+                      </td>
+
+                      <td class="px-4 py-3 text-gray-700 font-semibold text-sm whitespace-nowrap">
+                        ⏰ ${appointment.appointment_time}
+                      </td>
+
+                      <td class="px-4 py-3">
+                        <span class="inline-block px-2 py-1 rounded-full text-xs font-semibold 
+                          ${appointment.is_emergency ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}">
+                          ${appointment.is_emergency ? " Emergency" : "Regular"}
+                        </span>
+                      </td>
+
+                      <td class="px-4 py-3 space-x-2 whitespace-nowrap">
+                        <button onclick="approveAppointment('${appointment.id}')" 
+                          class="bg-green-600 hover:bg-green-700 text-white text-sm px-3 py-1.5 rounded shadow-sm transition">
+                          Accept
+                        </button>
+                        <button onclick="openRejectionModal('${appointment.id}')" 
+                          class="bg-red-600 hover:bg-red-700 text-white text-sm px-3 py-1.5 rounded shadow-sm transition">
+                          Reject
+                        </button>
+                      </td>
+                    </tr>
+                  `;
               appointmentList.innerHTML += row;
           });
       }
@@ -571,11 +659,63 @@
                 let emergencyCell = appointment.is_emergency
         ? `<td class="px-4 py-2">
              <button onclick="openLinkModal('${appointment.id}', '${appointment.patient_email}')" 
-                     class="text-red-600 font-semibold underline">🚨 Emergency</button>
+                     class="text-red-600 font-semibold underline"> Emergency</button>
            </td>`
         : `<td class="px-4 py-2">Regular</td>`;
 
                 content += `
+                <tr class="border-b hover:bg-gray-50 transition">
+
+                  <td class="px-4 py-3 text-blue-700 underline font-medium">
+                    <a href="/viewPatientProfile/${appointment.patient_email}/" target="_blank">
+                      ${appointment.patient_email}
+                    </a>
+                  </td>
+
+                  <td class="px-4 py-3 text-gray-700 font-semibold text-sm whitespace-nowrap">
+                    📅 ${appointment.appointment_date}
+                  </td>
+
+                  <td class="px-4 py-3 text-gray-700 font-semibold text-sm whitespace-nowrap">
+                    ⏰ ${appointment.appointment_time}
+                  </td>
+
+                  ${appointment.is_emergency ? `
+                    <td class="px-4 py-3">
+                      <button onclick="openLinkModal('${appointment.id}', '${appointment.patient_email}')" 
+                              class="inline-block px-2 py-1 text-sm font-medium rounded-full bg-red-100 text-red-700">
+                        <u>Emergency</u>
+                      </button>
+                    </td>` : `
+                    <td class="px-4 py-3">
+                      <span class="inline-block px-2 py-1 text-sm font-medium rounded-full bg-green-100 text-green-700">
+                        Regular
+                      </span>
+                    </td>`}
+
+                  
+                  <td class="px-4 py-3 text-center">
+                    <button onclick="openPrescription('${appointment.id}', '${appointment.appointment_date}')" 
+                            class="text-xl hover:scale-110 transition-transform" 
+                            title="View Prescription" style="background: none; border: none;">
+                      📄📄📄📄
+                    </button>
+                  </td>
+
+                  <td class="px-4 py-3 space-x-2">
+                    <button onclick="updateStatus('${appointment.id}', 'Completed')" 
+                            class="bg-${completedColor}-600 hover:bg-${completedColor}-700 text-white text-sm px-3 py-1.5 rounded shadow-sm transition" ${disabled}>
+                      Complete
+                    </button>
+                    <button onclick="updateStatus('${appointment.id}', 'Cancelled')" 
+                            class="bg-${cancelledColor}-600 hover:bg-${cancelledColor}-700 text-white text-sm px-3 py-1.5 rounded shadow-sm transition" ${disabled}>
+                      Cancel
+                    </button>
+                  </td>
+                </tr>
+                `;
+
+                /*
                       <tr class="border-b">
                       <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/">${appointment.patient_email}</a></td>
                       <td class="px-4 py-2">${appointment.appointment_date}</td>
@@ -592,7 +732,8 @@
                           <button onclick="updateStatus('${appointment.id}', 'Cancelled')" class="bg-${cancelledColor}-600 text-white px-3 py-1 rounded ml-2" ${disabled}>Cancel</button>
                       </td>
                   </tr>
-                `;
+                  */
+                
             });
             document.getElementById("appointmentList").innerHTML = content;
         });
@@ -666,6 +807,43 @@ function displayAppointments(appointments) {
           let completedColor = (text_color) ? "green" : "red";
 
           content += `
+          <tr class="border-b hover:bg-gray-50 transition" 
+                  data-email="${appointment.patient_email.toLowerCase()}" 
+                  data-date="${appointment.appointment_date}">
+
+                <td class="px-4 py-3 text-blue-700 underline font-medium">
+                  <a href="/viewPatientProfile/${appointment.patient_email}/" target="_blank">
+                    ${appointment.patient_email}
+                  </a>
+                </td>
+
+                <td class="px-4 py-3 text-gray-700 font-semibold whitespace-nowrap">
+                  📅 ${appointment.appointment_date}
+                </td>
+
+                <td class="px-4 py-3 text-gray-700 font-semibold whitespace-nowrap">
+                  ⏰ ${appointment.appointment_time}
+                </td>
+
+                <td class="px-4 py-3 text-center">
+                  <button onclick="openPrescription('${appointment.id}', '${appointment.appointment_date}')" 
+                          class="text-xl hover:scale-110 transition-transform" 
+                          title="View Prescription" style="background: none; border: none;">
+                    📄📄📄📄
+                  </button>
+                </td>
+
+                <td class="px-4 py-3">
+                  <span class="inline-block px-2 py-1 text-sm font-medium rounded-full bg-${completedColor}-100 text-${completedColor}-700">
+                    ${appointment.appointment_status}
+                  </span>
+                </td>
+              </tr>
+
+          `;
+
+
+          /*
               <tr class="border-b">
                   <td class="px-4 py-2"><a href="/viewPatientProfile/${appointment.patient_email}/">${appointment.patient_email}</a></td>
                   <td class="px-4 py-2">${appointment.appointment_date}</td>
@@ -678,7 +856,7 @@ function displayAppointments(appointments) {
                   </td>
                   <td class="px-4 py-2"><span class="bg-white text-${completedColor}-180">${appointment.appointment_status}</span></td>
               </tr>
-          `;
+          `;*/
       });
   }
 
@@ -712,9 +890,9 @@ function openPrescription(appointmentId) {
           }
           document.getElementById('prescription-info').innerHTML = `
 
-          <span>Patients detail</span>
-          <h4>${data.prescription.patient_name}</h4>
-          ${data.prescription.date} | ${data.prescription.time}
+          <span>Patients details: </span>
+          <h4>Name: ${data.prescription.patient_name}</h4>
+          Date: ${data.prescription.date} | ${data.prescription.time}
 
           `;
       });

@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Receptionist Dashboard - syncHealth</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/media/images/favicon-32x32.png">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
@@ -292,7 +293,7 @@ let patientsData = [];
         let row = `<tr class="patient-row" data-email="${p.email}">
           <td>${p.patient_no}</td>
           <td>${p.name}</td>
-          <td>${p.email}</td> 
+          <td><a href="/viewPatientProfile/${p.email}" target="_blank" class="text-blue-600 hover:text-blue-800 font-medium transition duration-200">${p.email}</a></td> 
           <td>${p.branch_name}</td>
           <td>${p.age}</td>
           <td>${p.gender}</td>
@@ -300,8 +301,8 @@ let patientsData = [];
           <td>${p.health_issues}</td> 
           <td>${p.assigned_doctors.map(doc => doc.name).join(", ")}</td>
           <td>
-            <button onclick="editPatient('${p.id}', '${p.branch}')" class="text-blue-600 hover:underline">Edit</button>
-            <button onclick="deletePatient('${p.email}')" class="text-red-600 hover:underline ml-2">Delete</button>
+            <button onclick="editPatient('${p.id}', '${p.branch}')" class="text-blue-600 hover:underline"> Edit</button>
+            <button onclick="deletePatient('${p.email}')" class="text-red-600 hover:underline ml-2"> Delete</button>
           </td>
         </tr>`;
         tableBody.innerHTML += row;

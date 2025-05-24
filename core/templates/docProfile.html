@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Doctor's Profile</title>
+  <title>Doctor {{doc.name}}'s Profile - syncHealth</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/media/images/favicon-32x32.png">
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50">
@@ -135,18 +136,6 @@
               </tr>
             </thead>
             <tbody id="appointments-table"></tbody>
-              <!-- 
-              <tr>
-                <td class="border px-4 py-2">2024/12/22 [208/09/07]</td>
-                <td class="border px-4 py-2">19:00 - 19:48</td>
-                <td class="border px-4 py-2 space-x-2">
-                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:00">19:00</button>
-                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:08">19:08</button>
-                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:16">19:16</button>
-                  <button class="time-btn px-4 py-1 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-time="19:24">19:24</button>
-                </td>
-              </tr>
-              -->
 
             
           </table>
@@ -165,7 +154,13 @@
   <div class="bg-white w-full max-w-2xl p-6 rounded-lg shadow-lg relative">
     <button onclick="document.getElementById('emergency-modal').classList.add('hidden')" class="absolute top-2 right-3 text-2xl">❌</button>
     <h2 class="text-xl font-bold text-[#29622E] mb-4">Book Online Emergency Appointment</h2>
-    <p>Dr. {{doc.name}} / {{doc.department}}</p>
+    <p class="text-sm sm:text-base bg-gray-50 border border-gray-200 rounded-md p-3 inline-block">
+      <span class="font-semibold text-green-700">Doctor:</span> 
+      <span class="text-gray-800 ml-1">{{ doc.name }}</span> 
+      <span class="text-gray-400 mx-2">/</span>
+      <span class="font-semibold text-green-700">Department:</span> 
+      <span class="text-gray-800 ml-1">{{ doc.department }}</span>
+    </p>
     <table class="min-w-full text-sm border border-gray-300">
       <thead class="bg-gray-100 text-[#29622E]">
         <tr>
@@ -333,17 +328,39 @@ document.addEventListener("DOMContentLoaded", function () {
   async function fetchWeeklySlots() {
       let response = await fetch(`/api/get-weekly-slots/${doctorEmail}/`);
       let data = await response.json();
+      data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
       console.log(data);
       tableBody.innerHTML = ""; 
 
       data.forEach((day, index) => {
           let row = document.createElement("tr");
-          row.innerHTML = `
+          row.innerHTML = 
+          `
+          <tr>
+            <td class="border px-4 py-2 whitespace-nowrap">${day.date} - ${day.day}</td>
+            <td class="border px-4 py-2">
+              <div class="flex flex-wrap gap-2 max-w-full">
+                ${day.available_time.map(time => `
+                  <button 
+                    class="time-btn px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition cursor-pointer whitespace-nowrap"
+                    data-date="${day.date}" 
+                    data-time="${time}">
+                    ${time}
+                  </button>
+                `).join("")}
+              </div>
+            </td>
+          </tr>
+
+          `;
+          
+          /*`
               <td class="border px-4 py-2">${day.date} - ${day.day}</td>
               <td class="border px-4 py-2 space-x-2">
                   ${day.available_time.map(time => `<button class="time-btn px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition" data-date="${day.date}" data-time="${time}">${time}</button>`).join(" ")}
               </td>
-          `;
+          `;*/
           tableBody.appendChild(row);
       });
 
@@ -413,12 +430,40 @@ const emergencyBtn = document.querySelector(".emergency_booking");
   async function fetchEmergencySlots() {
     let res = await fetch(`/api/get-weekly-slots/${docEmail}/`);
     let data = await res.json();
-    console.log("Emergency data:", data);
+    //console.log("Emergency data:", data);
     emergencyTable.innerHTML = "";
 
+    data.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    console.log(data);
+    //emergencyTable.innerHTML = "";
+    
     data.forEach(day => {
       if (day.emergency_available==true && day.available_emergency.length > 0) {
-        let row = `<tr>
+        let row = 
+        `
+        <tr>
+          <td class="border px-4 py-2">${day.date} - ${day.day}</td>
+          <td class="border px-4 py-2">
+            <div class="flex flex-wrap gap-2 max-w-full">
+              ${day.available_emergency.map(t => `
+                <span class="inline-block">
+                  <button 
+                    class="emg-btn px-4 py-1 bg-gray-200 text-gray-700 rounded shadow hover:bg-gray-300 transition cursor-pointer whitespace-nowrap"
+                    data-date="${day.date}" 
+                    data-time="${t}">
+                    ${t}
+                  </button>
+                </span>
+              `).join("")}
+            </div>
+          </td>
+        </tr>
+        `
+        
+        
+        /*
+        `<tr>
           <td class="border px-4 py-2">${day.date} - ${day.day}</td>
           <td class="border px-4 py-2 space-x-2">
             ${day.available_emergency.map(t => `
@@ -426,6 +471,7 @@ const emergencyBtn = document.querySelector(".emergency_booking");
             `).join("")}
           </td>
         </tr>`;
+        */
         emergencyTable.innerHTML += row;
       }
     });

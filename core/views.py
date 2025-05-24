@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.sessions.models import Session
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Sum
 from django.utils.dateparse import parse_date
 from django.core.mail import send_mail, EmailMessage, send_mass_mail
 from django.conf import settings
@@ -57,6 +57,7 @@ def home(request):
             "department": doc.department,
             "profile_pic": profile_pic,
         })
+        
     redirect_page = '/login/'
     if request.session.get('user_role'):    
         loggedin_user = request.session.get('user_role').lower()
@@ -108,7 +109,27 @@ def patientProfile(request):
         
         patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
         print(patient_val.assigned_doctors_data)
-    return render(request,"patientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val,  'patient_image':patient.profile_pic})
+        
+        redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+        
+    return render(request,"patientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val,  'patient_image':patient.profile_pic, 'profile_redirect':redirect_page})
 
 
 def doctorProfilePage(request):
@@ -140,7 +161,26 @@ def doctorProfilePage(request):
         
     profile_pic = get_object_or_404(Users, email=user_email).profile_pic
     
-    return render(request,"myProfileDoctor.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'doctor': doctor_val, 'profilePic': profile_pic})
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+    
+    return render(request,"myProfileDoctor.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'doctor': doctor_val, 'profilePic': profile_pic, 'profile_redirect':redirect_page})
     
 def testCentreDB(request):
     
@@ -162,9 +202,6 @@ def view_patientProfile(request, patient_email):
     if not request.session.get('is_authenticated'):
         return redirect('/login/')
     
-    if request.session.get('user_role') != 'doctor':
-        return redirect('/login/')  # Prevent unauthorized access
-    
     user_email = patient_email
     
     #Get admin details from session
@@ -183,10 +220,49 @@ def view_patientProfile(request, patient_email):
         
         patient_val.assigned_doctors_data = json.loads(patient_val.assigned_doctors)
         print(patient_val.assigned_doctors_data)
-    return render(request,"viewPatientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val, 'patient_image':patient.profile_pic})
+        
+        redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request,"viewPatientProfile.html", {'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val, 'patient_image':patient.profile_pic, 'profile_redirect':redirect_page})
 
 def showAllDoctors(request):
-    return render(request, "all_doctors.html")  
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request, "all_doctors.html", {'profile_redirect':redirect_page})  
 
 def adminDB(request):
     if not request.session.get('is_authenticated'):
@@ -212,7 +288,7 @@ def adminDB(request):
         'doctors': Doctors.objects.filter(branch=hospital_branch).count(),
         'departments': Departments.objects.filter(branch=hospital_branch).count(),
         'patients': Patients.objects.filter(branch=hospital_branch).count(),
-        'appointments': Appointments.objects.filter(branch=hospital_branch).count()
+        'revenue': HealthPackageBookings.objects.filter(branch=hospital_name).aggregate(Sum('amount'))['amount__sum'] or 0
     }
     
     return render(request, 'adminDB.html', {'branch_name': hospital_name, 'branch_code': hospital_branch, 'records':count_datas})
@@ -264,7 +340,27 @@ def masterAdmin(request):
 def loginPage(request):
     if request.GET:
         return redirect("/login/")
-    return render(request, "login.html")
+    
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request, "login.html", {'profile_redirect':redirect_page})
 
 # Login
 @csrf_exempt
@@ -337,8 +433,26 @@ def login_view(request):
 
         except Users.DoesNotExist:
             return render(request, 'login.html', {'error': 'Invalid email or password'})
-
-    return render(request, 'login.html')
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request, 'login.html', {'profile_redirect':redirect_page})
 
 
 def logout_view(request):
@@ -347,7 +461,26 @@ def logout_view(request):
 
 # Other pages redirect functions
 def aboutUs(request):
-    return render(request, 'aboutUs.html')
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request, 'aboutUs.html', {'profile_redirect':redirect_page})
 
 
 
@@ -691,7 +824,27 @@ def get_departments(request):
         return JsonResponse({"error": str(e)}, status=500)
 
 def display_all_departments(request):
-    return render(request, 'allDepartments.html')
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+            
+    return render(request, 'allDepartments.html', {'profile_redirect':redirect_page})
     
 
 # Edit User (Receptionist or Doctor)
@@ -995,7 +1148,27 @@ def get_test_centres(request):
 
 def all_test_centres(request):
     tc_list = Users.objects.filter(role="TestCentre").values("id", "name", "email", "branch_id", "profile_pic", "is_active")
-    return render(request, 'allTestCentres.html', {'tc_list':tc_list})
+    
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request, 'allTestCentres.html', {'tc_list':tc_list, 'profile_redirect':redirect_page})
 
 
 # Edit Test Centre
@@ -1350,7 +1523,28 @@ def doc_profile(request, doctor_email):
     doctor = get_object_or_404(Doctors, email=doctor_email)
     hospital_name = get_object_or_404(HospitalBranches, branch_code=doctor.branch_id)
     doc_profilePic = get_object_or_404(Users, email=doctor_email).profile_pic
-    return render(request, 'docProfile.html',{'doc': doctor, 'hospital': hospital_name, "logged_in": logged_in, "msg":msg, 'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val, 'profilePic':doc_profilePic})
+    
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+            
+    return render(request, 'docProfile.html',{'doc': doctor, 'hospital': hospital_name, "logged_in": logged_in, "msg":msg, 'branch_name': hospital_name, 'branch_code': hospital_branch, 'patients': patient_val, 'profilePic':doc_profilePic, 'profile_redirect':redirect_page})
 
 
 
@@ -1735,7 +1929,28 @@ def test_centres(request, centre_email):
     profile = get_object_or_404(Users, email=centre_email)
     profile_pic = profile.profile_pic
     
-    return render(request, 'testCentre.html',{'tst_cnt': tc, 'tst_profile':profile_pic, 'user_email':user_email, 'user_role':user_role})   
+    
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+            
+    return render(request, 'testCentre.html',{'tst_cnt': tc, 'tst_profile':profile_pic, 'user_email':user_email, 'user_role':user_role, 'profile_redirect':redirect_page})   
 
 
 
@@ -1883,8 +2098,27 @@ def health_packages(request, package_id):
     
     hp = get_object_or_404(HealthPackages, id=package_id)
 
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
     
-    return render(request, 'healthPackage.html',{'hlt_pkg': hp, 'user_email':user_email, 'user_role':user_role})   
+    return render(request, 'healthPackage.html',{'hlt_pkg': hp, 'user_email':user_email, 'user_role':user_role, 'profile_redirect':redirect_page})   
 
 
 
@@ -2106,14 +2340,54 @@ def forgotPass(request):
     
     user_email = request.session.get('user_email')
     print(user_email)
-    return render(request,"forgotPass.html", {'user_email': user_email})
+    
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+    
+    return render(request,"forgotPass.html", {'user_email': user_email, 'profile_redirect':redirect_page})
 
 @csrf_exempt
 def changePass(request):
     
     user_email = request.session.get('user_email')
     print(user_email)
-    return render(request,"passwordReset.html", {'user_email': user_email})
+    
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request,"passwordReset.html", {'user_email': user_email, 'profile_redirect':redirect_page})
     
     
 @csrf_exempt
@@ -2322,7 +2596,27 @@ def get_health_packages(request):
     return JsonResponse({"packages": list(all_packages)}, status=200)
 
 def healthPackages(request):
-    return render(request, 'healthPackages.html')
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+            
+    return render(request, 'healthPackages.html', {'profile_redirect':redirect_page})
 
 def get_pending_appointments(request):
     user_email = request.session.get("user_email")
@@ -2386,7 +2680,26 @@ def chatPage(request):
     else:
         doctor_dept = ""
     
-    return render(request, 'chat.html', {'user_role':user_role, 'user_email':user_email, 'doctor_department': doctor_dept}) 
+    redirect_page = '/login/'
+    if request.session.get('user_role'):    
+        loggedin_user = request.session.get('user_role').lower()
+        
+        if loggedin_user == 'masteradmin':
+            redirect_page = "/masterAdminDB/"
+        elif loggedin_user == 'doctor':
+            redirect_page = "/myProfile-Doctor/"
+        elif loggedin_user == 'admin':
+            redirect_page = "/adminDB/"
+        elif loggedin_user == 'patient':
+            redirect_page = "/patientProfile/"
+        elif loggedin_user == 'reception':
+            redirect_page = "/receptionDB/"
+        elif loggedin_user == 'testcentre':
+            redirect_page = "/testCentreDB/"
+        else:
+            redirect_page = "/login/"
+            
+    return render(request, 'chat.html', {'user_role':user_role, 'user_email':user_email, 'doctor_department': doctor_dept, 'profile_redirect':redirect_page}) 
 
 @csrf_exempt
 def get_contacts(request):

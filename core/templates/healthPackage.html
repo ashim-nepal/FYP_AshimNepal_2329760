@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ hlt_pkg.name }} | Package Booking - syncHealth</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="/media/images/favicon-32x32.png">
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-100">
@@ -62,17 +63,19 @@
     </div>
   </nav>
 
+  <h1 class="text-3xl mt-5 text-center font-bold text-[#29622E]">Package Booking - {{ hlt_pkg.name }}</h1>
+
     <div class="max-w-4xl mt-10 mx-auto bg-white p-6 rounded-lg shadow-md">
-        <img id="packagePic" class="w-24 h-24 rounded" src="/media/{{hlt_pkg.image}}" alt="Health Package">
-        <h2 class="text-2xl font-semibold">{{ hlt_pkg.name }}</h2>
-        <p class="text-gray-600">{{ hlt_pkg.description }}</p>
+        <img id="packagePic" class="w-250 h-150 rounded" src="/media/{{hlt_pkg.image}}" alt="Health Package">
+        <h2 class="text-2xl mt-2 font-semibold">{{ hlt_pkg.name }}</h2>
+        <p class="text-gray-600 mt-2">{{ hlt_pkg.description }}</p>
 
         <div class="flex flex-wrap gap-2 mt-4">
             <!-- Date buttons dynamically inserted here -->
         </div>
 
         <p class="text-xl font-bold mt-4">Price Rs. {{hlt_pkg.price}}</p>
-        <button id="bookBtn" class="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg opacity-50 cursor-not-allowed">
+        <button id="bookBtn" class="mt-4 bg-green-600 text-white px-4 py-2 rounded-lg opacity-50 hover:bg-green-700 cursor-not-allowed">
             Book Health Package
         </button>
     </div>
@@ -169,11 +172,11 @@
 
                 btn.addEventListener("click", function() {
                     document.querySelectorAll(".date-btn").forEach(b => {
-                        b.classList.remove("bg-green-500", "text-white");
+                        b.classList.remove("bg-green-800", "text-white");
                         b.classList.add("bg-gray-300", "text-black");
                     });
                     this.classList.remove("bg-gray-300", "text-black");
-                    this.classList.add("bg-green-500", "text-white");
+                    this.classList.add("bg-green-800", "text-white");
 
                     selectedDate = this.dataset.date;
                     bookBtn.classList.remove("opacity-50", "cursor-not-allowed");

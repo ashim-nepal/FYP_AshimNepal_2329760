@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ patients.name}}'s' Profile - syncHealth</title>
+  <link rel="icon" type="image/png" sizes="32x32" href="/media/images/favicon-32x32.png">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -124,15 +125,21 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-<!-- Replace the Graph Placeholder Div -->
+
 <div id="chart-container" class="bg-white rounded-md p-4 shadow-md">
   <div class="flex justify-between items-center mb-4">
     <h3 class="font-bold text-lg text-[#29622E]">Health Charts - {{patients.name}}</h3>
     <button id="print-chart-btn" class="bg-green-700 text-white px-4 py-1 rounded">Print Chart PDF</button>
   </div>
+  
   <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    <canvas id="bp-chart" height="250"></canvas>
-    <canvas id="sugar-chart" height="250"></canvas>
+    <!-- Wrap canvases in relative containers for responsive scaling -->
+    <div class="relative w-full h-64">
+      <canvas id="bp-chart" class="w-full h-full"></canvas>
+    </div>
+    <div class="relative w-full h-64">
+      <canvas id="sugar-chart" class="w-full h-full"></canvas>
+    </div>
   </div>
 </div>
 
@@ -255,17 +262,38 @@
         data: {
           labels: dates,
           datasets: [
-            { label: "Systolic", data: systolic, borderColor: "#2563EB", fill: false },
-            { label: "Diastolic", data: diastolic, borderColor: "#16A34A", fill: false }
+            { label: "Systolic(mmHg)", data: systolic, borderColor: "#2563EB", fill: false },
+            { label: "Diastolic(mmHg)", data: diastolic, borderColor: "#16A34A", fill: false }
           ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top" }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
         }
+
       });
   
       new Chart("sugar-chart", {
         type: "line",
         data: {
           labels: dates,
-          datasets: [{ label: "Diabetes", data: sugar, borderColor: "#DC2626", fill: false }]
+          datasets: [{ label: "Diabetes(mg/L)", data: sugar, borderColor: "#DC2626", fill: false }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top" }
+          },
+          scales: {
+            y: { beginAtZero: true }
+          }
         }
       });
     }
@@ -326,14 +354,19 @@
     function renderRecordDetails(data) {
       const container = document.getElementById("record-details");
       container.innerHTML = "";
+      console.log(data);
     
       const append = (title, desc, date, extras = "") => {
         container.innerHTML += `
-          <div class="p-4 border rounded-lg bg-gray-50">
-            <p class="text-green-700 font-bold">${title}</p>
-            <p class="text-sm text-gray-700">${desc}</p>
-            <p class="text-xs text-gray-500 mb-2">Date: ${date}</p>
-            ${extras}
+          <div class="p-5 border rounded-xl shadow-sm bg-gradient-to-br from-white to-gray-50 hover:shadow-lg transition-shadow duration-300 mb-4">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-sm font-semibold text-green-700 bg-green-100 px-3 py-1 rounded-full">${title}</span>
+              <span class="text-xs text-gray-500 italic">📅 ${date}</span>
+            </div>
+            <p class="text-base text-gray-800 font-medium mb-1">${desc}</p>
+            <div class="text-sm text-gray-700 leading-relaxed space-y-1 mt-2">
+              ${extras}
+            </div>
           </div>`;
       };
     
@@ -341,16 +374,22 @@
         let extra = "";
         if (item.prescription) {
           extra = `
-            <p><strong>BP:</strong> ${item.prescription.pressure}</p>
-            <p><strong>Diabetes:</strong> ${item.prescription.diabetes}</p>
-            <p><strong>Medication:</strong> ${item.prescription.medication}</p>
-            <p><strong>Notes:</strong> ${item.prescription.notes}</p>`;
+            <p><span class="font-semibold text-gray-600">🩺 BP:</span> ${item.prescription.pressure}</p>
+            <p><span class="font-semibold text-gray-600">🧪 Diabetes:</span> ${item.prescription.diabetes}</p>
+            <p><span class="font-semibold text-gray-600">💊 Medication:</span> ${item.prescription.medication}</p>
+            <p><span class="font-semibold text-gray-600">📝 Notes:</span> ${item.prescription.notes}</p>`;
         }
         append("Appointment", item.desc, item.date, extra);
       });
     
       data.tests.forEach(item => {
-        let extra = item.report_file ? `<a href="${item.report_file}" target="_blank" class="text-blue-600 underline">📄 View Report</a>` : "";
+        let extra = item.report_file
+          ? `<a href="${item.report_file}" target="_blank"
+                class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-md shadow-sm transition duration-300">
+                📄View Report
+              </a>
+          `
+          : "";
         append("Test", item.desc, item.date, extra);
       });
     
