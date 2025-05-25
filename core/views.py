@@ -1926,8 +1926,8 @@ def test_centres(request, centre_email):
     
     tc = get_object_or_404(TestCentre, email=centre_email)
     
-    profile = get_object_or_404(Users, email=centre_email)
-    profile_pic = profile.profile_pic
+    
+    profile_pic = tc.testcentre_pic
     
     
     redirect_page = '/login/'

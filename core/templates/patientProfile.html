@@ -107,7 +107,7 @@
         <p class="mb-4"><span class="font-bold">Gender:</span> {{ patients.gender}}</p>
         <p class="mb-4"><span class="font-bold">Address:</span> {{ patients.address}}</p>
         <p class="mb-4"><span class="font-bold">Consultant Doctor(s):</span> {% for doctor in patients.assigned_doctors_data %}
-          <a href="mailto:{{doctor.email}}" target="_blank" title="{{doctor.email}}"> {{ doctor.name }}(NMC: {{doctor.nmc}})</a>{% if not forloop.last %}, {% endif %}
+          <a href="/docProfile/{{doctor.email}}" target="_blank" title="Email: {{doctor.email}}"> {{ doctor.name }}(NMC: {{doctor.nmc}})</a>{% if not forloop.last %}, {% endif %}
       {% endfor %} 
         </p>
 
