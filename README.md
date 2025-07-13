@@ -3,21 +3,25 @@
 
 This Repository consists of the files that I have done in creating a simple hospital appointment management Application using Django and the databse used here in this project is PostgreSQL. syncHealth is an application designed to ease health services and some of the problems solving by this project, advantages, disadvantages and lastly project features are discussed in this part. Being used by both main users i.e. doctors and patients the application directly helps in building good communication and doubt clearing interaction between patient and doctor with chat feature. Along with that other health service providing and appointment bookings can also be made by patients. Moreover, patients can also be able to access their prescriptions and medical history reports anytime they want. Likewise, visualization of basic health report and notifications helps patient for easy reminders. Doctors can also be able to manage their schedules and plan on patients meeting for diagnosis. Doctor community group also helps them be connected with multiple doctors for patient case study and sharing. Lastly the super administrator user is able to add users, manage services and facilities and perform different activities directly affecting the working of applications and users involved in it. With all such features implemented the application helps to boost services workflow in any health institute.
 
-Some of the Key functionalities of the application are as follows:
-i. Users Database
-ii. Appointment bookings by patient
-iii. Doctors allocating time and accepting appointments
-iv. Chats between Patients/Doctors
-v. Admin Tools for managing Application
-vi. Emergency remote Appointment
-vii. Digital Prescription records
-viii. Patients basic health tests visualized records
-ix. Health Tests and Services E-commerce
-x. Nearby Pharmacy tracker
-xi. User Profile (both doctors/patients)
-xii. Multiple hospital test centre and check-up centre appointments
-xiii. General Reports and data storage for workflow analysis
+Some of the Key functionalities of the application are as follows:<br>
+i. Users Database<br>
+ii. Appointment bookings by patient<br>
+iii. Doctors allocating time and accepting appointments<br>
+iv. Chats between Patients/Doctors<br>
+v. Admin Tools for managing Application<br>
+vi. Emergency remote Appointment<br>
+vii. Digital Prescription records<br>
+viii. Patients basic health tests visualized records<br>
+ix. Health Tests and Services E-commerce<br>
+x. Nearby Pharmacy tracker<br>
+xi. User Profile (both doctors/patients)<br>
+xii. Multiple hospital test centre and check-up centre appointments<br>
+xiii. General Reports and data storage for workflow analysis<br>
 
+The Functional Decomposition Diagram of syncHealth is as follows:<br>
+
+![app-1](https://github.com/ashim-nepal/FYP_AshimNepal_2329760/blob/main/images/Screenshot%202025-04-10%20224124.png)
+<br>
 
 
 ## Acknowledgements
